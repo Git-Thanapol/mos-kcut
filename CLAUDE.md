@@ -6,11 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm run dev` / `npm run build` / `npm run preview` — Astro static site (Tailwind v3, same version as the prototype CDN).
 - `npm run media` — regenerates `public/` WebP images and 720p videos from the originals in `KCUT_PROTOTYPE/` (needs those originals; do not hand-edit `public/` media).
-- Plan and stages: `docs/PLAN.md`. Stage 1 (static port) is done; Sanity, orders/email and address autofill are not built yet.
+- `npm run address` rebuilds `public/thai-address.json`; `npm run placeholders` rewrites the mock covers.
+- `server/` (run `npm start` there): order API + `/admin`, plain Node with one dependency (nodemailer). `npm run dev` in `site/` proxies `/api` and `/admin` to it; `astro preview` does not.
+- Plan and stages: `docs/PLAN.md`. Mocks still in place: file order store, file mail outbox, placeholder covers, Sanity (defaults used). Env vars in `server/.env.example` switch them to Supabase / Gmail.
 
 ## Current state
 
-`site/` is the new Astro port (components in `src/components`, fallback content in `src/data/defaults.ts`, read through `getContent()` in `src/data/content.ts`, browser scripts in `public/checkout.js` and `public/modals.js`). `KCUT_PROTOTYPE/` is the untouched reference and must keep matching it visually (section heights were verified identical at 1280px). There is no test suite or linter. The repo holds:
+`site/` is the new Astro port (the checkout form now posts orders to `/api/order`; `public/address.js` fills the address from `public/thai-address.json`; the page already has a fixed mobile LINE bar from the prototype, so do not add another) (components in `src/components`, fallback content in `src/data/defaults.ts`, read through `getContent()` in `src/data/content.ts`, browser scripts in `public/checkout.js` and `public/modals.js`). `KCUT_PROTOTYPE/` is the untouched reference and must keep matching it visually (section heights were verified identical at 1280px). There is no test suite or linter. The repo holds:
 
 - `KCUT_PROTOTYPE/index.html` — the entire existing product: a single-file Thai-language (`lang="th"`) landing page for KCUT (a video-clip-cutting service), ~1100 lines.
 - `KCUT_PROTOTYPE/*.png|jpg|mp4` — media referenced by relative path from `index.html` (hero video/images, chat screenshots, ad images, QR code, business cards, logo).

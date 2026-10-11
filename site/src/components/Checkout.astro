@@ -99,27 +99,33 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
                                 <label class="block text-sm font-bold text-[#0A1224] mb-2">ชื่อ</label>
-                                <input type="text" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                <input type="text" name="firstName" autocomplete="given-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-[#0A1224] mb-2">นามสกุล</label>
-                                <input type="text" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                <input type="text" name="lastName" autocomplete="family-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                             </div>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-[#0A1224] mb-2">เบอร์โทรศัพท์</label>
-                            <input type="tel" placeholder="เช่น 0812345678" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <input type="tel" name="phone" autocomplete="tel" inputmode="numeric" maxlength="10" placeholder="เช่น 0812345678" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-bold text-[#0A1224] mb-2">อีเมล (ไม่บังคับ — ใช้รับอีเมลยืนยันคำสั่งซื้อ)</label>
+                            <input type="email" name="email" autocomplete="email" maxlength="120" placeholder="เช่น name@email.com" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-[#0A1224] mb-2">บ้านเลขที่ หมู่บ้าน อาคาร ซอย ถนน</label>
-                            <textarea rows="2" placeholder="เช่น 12/34 หมู่บ้านสุขใจ ซอย 5" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
+                            <textarea rows="2" name="address1" autocomplete="street-address" maxlength="200" placeholder="เช่น 12/34 หมู่บ้านสุขใจ ซอย 5" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
                         </div>
 
-                        <div>
-                            <label class="block text-sm font-bold text-[#0A1224] mb-2">ค้นหาตำบล / แขวง หรือรหัสไปรษณีย์</label>
-                            <input type="text" placeholder="เช่น 10110 หรือ คลองเตย" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition mb-1">
+                        <div class="relative">
+                            <label class="block text-sm font-bold text-[#0A1224] mb-2" for="addrSearch">ค้นหาตำบล / แขวง หรือรหัสไปรษณีย์</label>
+                            <input type="text" id="addrSearch" autocomplete="off" inputmode="search" placeholder="เช่น 10110 หรือ คลองเตย" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition mb-1">
+                            <ul id="addrResults" class="hidden absolute left-0 right-0 z-30 mt-0 max-h-64 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-xl text-sm"></ul>
                             <p class="text-xs text-gray-500">เลือกครั้งเดียว ระบบเติมอำเภอ จังหวัด และรหัสไปรษณีย์ให้</p>
                         </div>
 
@@ -130,20 +136,20 @@
                             </summary>
                             <div class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 bg-white">
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">จังหวัด</label>
-                                    <select class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option>เลือกจังหวัด</option></select>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1" for="addrProvince">จังหวัด</label>
+                                    <select id="addrProvince" name="province" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option value="">เลือกจังหวัด</option></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">อำเภอ / เขต</label>
-                                    <select class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option>เลือกอำเภอ / เขต</option></select>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1" for="addrDistrict">อำเภอ / เขต</label>
+                                    <select id="addrDistrict" name="district" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option value="">เลือกอำเภอ / เขต</option></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">ตำบล / แขวง</label>
-                                    <select class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option>เลือกตำบล / แขวง</option></select>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1" for="addrSub">ตำบล / แขวง</label>
+                                    <select id="addrSub" name="subdistrict" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option value="">เลือกตำบล / แขวง</option></select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 mb-1">รหัสไปรษณีย์</label>
-                                    <select class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option>เลือกรหัสไปรษณีย์</option></select>
+                                    <label class="block text-xs font-bold text-gray-700 mb-1" for="addrZip">รหัสไปรษณีย์</label>
+                                    <select id="addrZip" name="zip" class="w-full px-3 py-2 rounded-lg border border-gray-300 bg-gray-50 text-sm focus:outline-none"><option value="">เลือกรหัสไปรษณีย์</option></select>
                                 </div>
                             </div>
                         </details>
@@ -153,7 +159,7 @@
                                 <span class="mr-2 transform group-open:rotate-90 transition-transform">▶</span> เพิ่มหมายเหตุ (ไม่บังคับ)
                             </summary>
                             <div class="p-4 bg-white">
-                                <textarea rows="2" placeholder="เช่น ฝากไว้ที่นิติบุคคล" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
+                                <textarea rows="2" name="note" maxlength="300" placeholder="เช่น ฝากไว้ที่นิติบุคคล" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
                             </div>
                         </details>
                     </div>
@@ -223,7 +229,7 @@
                             <h4 class="font-bold text-[#0A1224] mb-3">แนบรูปสลิปโอนเงิน</h4>
                             <label class="block w-full border border-blue-500 text-blue-600 hover:bg-blue-50 text-center font-bold py-3 rounded-lg cursor-pointer transition-colors">
                                 เลือกรูปสลิปจากเครื่อง +
-                                <input type="file" accept="image/jpeg, image/png, image/webp" class="hidden" required id="slipInput">
+                                <input type="file" name="slip" accept="image/jpeg, image/png, image/webp" class="hidden" required id="slipInput">
                             </label>
                             <p class="text-xs text-gray-500 mt-2">เลือกรูป JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
                         </div>
@@ -247,6 +253,7 @@
                     <p>เราใช้ชื่อ เบอร์โทร และที่อยู่เพื่อจัดส่งและดูแลคำสั่งซื้อ <a href="#privacySection" onclick="document.getElementById('privacyDetails').open = true;" class="underline text-[#0A1224] hover:text-blue-600 transition-colors">อ่านการใช้ข้อมูลส่วนบุคคล</a></p>
                 </div>
 
+                <p id="formError" class="hidden text-center text-sm font-bold text-red-600 mb-3" role="alert"></p>
                 <!-- ปุ่มยืนยัน -->
                 <button type="submit" class="w-full bg-gradient-to-b from-[#FAD26C] to-[#DF9B15] text-[#0A1224] hover:brightness-105 active:translate-y-1 font-bold text-lg md:text-xl py-4 rounded-xl shadow-lg transition-all border-b-[4px] border-[#B3780D] active:border-b-0">
                     ยืนยันสั่งซื้อ • <span id="btnActionText">โอนเงิน 390 บาท</span>

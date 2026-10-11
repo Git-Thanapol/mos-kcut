@@ -60,37 +60,37 @@ export const defaults = {
   "clips": [
     {
       "views": "840,000",
-      "cover": "/cover1.jpg",
+      "cover": "/cover1.webp",
       "title": "คลิปความรู้เรื่องรถ",
       "subtitle": "ฟาดคนใช้รถ"
     },
     {
       "views": "730,000",
-      "cover": "/cover2.jpg",
+      "cover": "/cover2.webp",
       "title": "คลิปแนะนำสินค้า",
       "subtitle": "ฟาดคนใช้รถ"
     },
     {
       "views": "500,000",
-      "cover": "/cover3.jpg",
+      "cover": "/cover3.webp",
       "title": "แจกสูตรลับตัดต่อ",
       "subtitle": "KCUT Official"
     },
     {
       "views": "320,000",
-      "cover": "/cover4.jpg",
+      "cover": "/cover4.webp",
       "title": "รีวิวไมค์ไร้สาย",
       "subtitle": "อุปกรณ์คนทำคลิป"
     },
     {
       "views": "150,000",
-      "cover": "/cover5.jpg",
+      "cover": "/cover5.webp",
       "title": "เทคนิคการพูดหน้ากล้อง",
       "subtitle": "สอนมือใหม่ทำช่อง"
     },
     {
       "views": "95,000",
-      "cover": "/cover6.jpg",
+      "cover": "/cover6.webp",
       "title": "ไอเดียทำคลิปสั้น",
       "subtitle": "สายคอนเทนต์ห้ามพลาด"
     }

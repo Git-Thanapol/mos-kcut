@@ -7,11 +7,11 @@ Target: Ubuntu 22.04/24.04 LTS, single VPS. The public page is static files serv
 | Part | Status | Runs as |
 |---|---|---|
 | Static site (`site/dist`) | built (stage 1) | nginx serves files, no process |
-| Order API (`POST /api/order`, paid-email trigger) | **not built yet** (stage 3) | Node service via systemd, behind nginx |
+| Order API (`server/`: `POST /api/order`, `/admin`, paid emails) | built; mock store/mail until env vars are set | Node service via systemd, behind nginx |
 | Rebuild webhook (Sanity "Publish" -> rebuild) | **not built yet** (stage 2) | same Node service |
 | Content (Sanity) / orders (Supabase) | hosted SaaS | nothing on the server |
 
-Until stages 2–3 exist, only steps 1–4 and 7 apply.
+The API (step 6) is ready to deploy; with no Supabase/SMTP variables it runs on the mock store (`data/` folder), so set the real ones before go-live. Sanity (step 7) is still open.
 
 ## 0. Before you start (decisions / inputs)
 - Domain name and DNS A record pointing at the server IP (also AAAA if IPv6).
@@ -78,9 +78,8 @@ server {
     # mp4 seeking / streaming
     location ~* \.mp4$ { mp4; add_header Accept-Ranges bytes; }
 
-    # stage 3 only:
-    # location /api/ { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
-    #                  proxy_set_header X-Real-IP $remote_addr; client_max_body_size 6m; }
+    location ~ ^/(api|admin)/? { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
+                                 proxy_set_header X-Real-IP $remote_addr; client_max_body_size 8m; }
 
     add_header X-Frame-Options SAMEORIGIN;
     add_header Referrer-Policy strict-origin-when-cross-origin;
@@ -99,9 +98,9 @@ sudo certbot --nginx -d example.com -d www.example.com --redirect -m you@example
 sudo systemctl status certbot.timer     # auto-renewal
 ```
 
-## 6. Order API service (stage 3, after it is built)
-- Code in `/opt/kcut-api`, run by a dedicated `kcut` user. Node 22 LTS from NodeSource (`apt`).
-- Secrets in `/etc/kcut/api.env` (`chmod 600`, owner `kcut`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SHOP_NOTIFY_EMAIL`, `WEBHOOK_SECRET`. Never in the repo or the logs.
+## 6. Order API service (`server/` in this repo)
+- Copy `server/` to `/opt/kcut-api` (`npm ci --omit=dev`), run by a dedicated `kcut` user; `ExecStart` is `node server.js`. Set `DATA_DIR=/var/lib/kcut` if you stay on the file store. Node 22 LTS from NodeSource (`apt`).
+- Variables are listed in `server/.env.example`. Secrets in `/etc/kcut/api.env` (`chmod 600`, owner `kcut`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SHOP_NOTIFY_EMAIL`, `WEBHOOK_SECRET`. Never in the repo or the logs.
 - `/etc/systemd/system/kcut-api.service`:
   ```ini
   [Unit]
@@ -121,7 +120,7 @@ sudo systemctl status certbot.timer     # auto-renewal
   ```
   `sudo systemctl enable --now kcut-api`, logs via `journalctl -u kcut-api -f`.
 - Bind to `127.0.0.1:3000` only; nginx is the only public entry. Add `limit_req_zone` on `/api/order` to slow abuse.
-- Supabase "paid = true" webhook -> `/api/paid` with the `WEBHOOK_SECRET` header; the API sends both emails.
+- Staff mark orders paid at `https://example.com/admin` (HTTP basic auth with `ADMIN_PASSWORD`, so keep HTTPS on); that call sends both emails. Proxy `/api/` and `/admin` to 127.0.0.1:3000 in nginx.
 - Outbound SMTP: many VPS providers block port 465/25. Test `openssl s_client -connect smtp.gmail.com:465` before go-live.
 
 ## 7. Content updates (stage 2)

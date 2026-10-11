@@ -14,3 +14,10 @@ Stack: Astro (static) + Tailwind v3 (compiled, same version as the CDN) + Sanity
 - Payment method (slip upload vs PromptPay vs gateway) — manual "mark paid" until decided.
 - Missing assets: cover1-6.jpg; every feature currently points at video-demo.mp4.
 - Media is huge (videos 22-25 MB, PNGs 2-3 MB): compress before launch.
+
+## Status (updated)
+1. Static port — done.
+2. Sanity — schema (`sanity/`) and loader (`site/src/data/content.ts`) written, **mock** until a project exists.
+3. Orders — `server/` done with mock store and mail, Supabase/SMTP adapters written but untested.
+4. Thai address autofill — done and tested in the browser.
+5. LINE button — the prototype already has a fixed mobile bar with the LINE button, so nothing added. Remaining: Lighthouse run, tablet check, real covers/videos.

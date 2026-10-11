@@ -93,21 +93,78 @@
         });
     }
 
-    function submitCheckout(event) {
-        event.preventDefault(); // ป้องกันการรีเฟรชหน้า
-        
-        // ดึงปุ่มมาเปลี่ยนข้อความระหว่างรอโหลด
-        const btn = event.target.querySelector('button[type="submit"]');
-        const originalHtml = btn.innerHTML;
-        btn.innerHTML = 'กำลังประมวลผล...';
-        btn.disabled = true;
+    function showFormError(msg) {
+    var el = document.getElementById('formError');
+    el.textContent = msg;
+    el.classList.toggle('hidden', !msg);
+    if (msg) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
 
-        // จำลองการส่งข้อมูล 1 วินาที แล้วเด้งไปหน้าแอด LINE
-        setTimeout(() => {
-            window.location.href = "https://lin.ee/YmWfY9Kv";
-        }, 1000);
+function readAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+        var r = new FileReader();
+        r.onload = function () { resolve(r.result); };
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+
+// ส่งออเดอร์ไปที่ API (ตั้ง window.KCUT_API ได้ถ้า API อยู่คนละโดเมน) แล้วค่อยพาไป LINE
+async function submitCheckout(event) {
+    event.preventDefault();
+    var form = event.target;
+    var btn = form.querySelector('button[type="submit"]');
+    var originalHtml = btn.innerHTML;
+    showFormError('');
+
+    var f = form.elements;
+    var pkg = form.querySelector('input[name="package"]:checked');
+    var pay = form.querySelector('input[name="payment"]:checked');
+    if (!f.zip.value || !f.subdistrict.value) {
+        showFormError('กรุณาเลือกตำบล อำเภอ จังหวัด และรหัสไปรษณีย์ (พิมพ์รหัสไปรษณีย์หรือชื่อตำบลในช่องค้นหา)');
+        document.getElementById('addrSearch').focus();
+        return;
+    }
+    var slip = f.slip.files && f.slip.files[0];
+    if (pay.value === 'transfer') {
+        if (!slip) { showFormError('กรุณาแนบสลิปการโอนเงิน'); return; }
+        if (slip.size > 5 * 1024 * 1024) { showFormError('ไฟล์สลิปใหญ่เกิน 5 MB กรุณาเลือกไฟล์ใหม่'); return; }
     }
 
-    // เรียกใช้งานครั้งแรกตอนโหลดเว็บเพื่อให้ค่าตั้งต้นถูกต้อง
+    btn.innerHTML = 'กำลังประมวลผล...';
+    btn.disabled = true;
+    try {
+        var payload = {
+            package: pkg.value,
+            payment: pay.value,
+            firstName: f.firstName.value.trim(),
+            lastName: f.lastName.value.trim(),
+            phone: f.phone.value.trim(),
+            email: f.email.value.trim(),
+            address1: f.address1.value.trim(),
+            subdistrict: f.subdistrict.options[f.subdistrict.selectedIndex].text,
+            district: f.district.options[f.district.selectedIndex].text,
+            province: f.province.options[f.province.selectedIndex].text,
+            zip: f.zip.value,
+            note: f.note.value.trim(),
+            slip: pay.value === 'transfer' && slip ? { name: slip.name, dataUrl: await readAsDataUrl(slip) } : null
+        };
+        var res = await fetch((window.KCUT_API || '') + '/api/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        var data = await res.json().catch(function () { return {}; });
+        if (!res.ok) throw new Error(data.error || 'ส่งคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่หรือทักไลน์ @spgo');
+        btn.innerHTML = 'สั่งซื้อสำเร็จ เลขที่ ' + data.orderId + ' กำลังพาไปที่ LINE...';
+        setTimeout(function () { window.location.href = 'https://lin.ee/YmWfY9Kv'; }, 2500);
+    } catch (err) {
+        showFormError(err.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+}
+
+// เรียกใช้งานครั้งแรกตอนโหลดเว็บเพื่อให้ค่าตั้งต้นถูกต้อง
     document.addEventListener('DOMContentLoaded', updateSummary);
 

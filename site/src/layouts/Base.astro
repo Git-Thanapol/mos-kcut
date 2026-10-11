@@ -1,5 +1,7 @@
 ---
 import '../styles/global.css';
+// cache-busting for the un-fingerprinted scripts in /public: changes on every build
+const v = Date.now().toString(36);
 ---
 <!DOCTYPE html>
 <html lang="th">
@@ -13,7 +15,9 @@ import '../styles/global.css';
 </head>
 <body class="antialiased">
     <slot />
-    <script is:inline src="/checkout.js" defer></script>
-    <script is:inline src="/modals.js" defer></script>
+
+    <script is:inline src={`/checkout.js?v=${v}`} defer></script>
+    <script is:inline src={`/address.js?v=${v}`} defer></script>
+    <script is:inline src={`/modals.js?v=${v}`} defer></script>
 </body>
 </html>

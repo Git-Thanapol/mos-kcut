@@ -3,6 +3,9 @@ node_modules/
 dist/
 .astro/
 
+# local mock data written by server/ (orders, slips, outbox)
+data/
+
 # secrets
 .env
 .env.*
