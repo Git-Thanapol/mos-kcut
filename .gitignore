@@ -1,0 +1,19 @@
+# dependencies / build output
+node_modules/
+dist/
+.astro/
+
+# secrets
+.env
+.env.*
+!.env.example
+
+# large originals (kept locally; `npm run media` reads them from ../KCUT_PROTOTYPE)
+ADS/
+KCUT_PROTOTYPE/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

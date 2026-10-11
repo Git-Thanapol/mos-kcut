@@ -1,0 +1,40 @@
+    <!-- 3. อธิบายขั้นตอนการตัดคลิป (Video GIF) -->
+    <!-- ปรับลดระยะห่าง (py-16 เป็น py-6 md:py-8) และลด gap ต่างๆ -->
+    <section class="container mx-auto px-4 py-6 md:py-8 max-w-6xl">
+        <h3 class="text-3xl md:text-4xl font-bold text-center mb-6">ขั้นตอนการตัดคลิป</h3>
+        
+        <div class="flex justify-center mb-6">
+            <div class="w-full max-w-4xl bg-slate-900 rounded-3xl overflow-hidden border border-slate-700 shadow-2xl relative aspect-video flex items-center justify-center">
+                <video src="/GIF.mp4" preload="metadata" 
+                       autoplay 
+                       loop 
+                       muted 
+                       playsinline 
+                       class="w-full h-full object-cover relative z-20">
+                </video>
+            </div>
+        </div>
+
+       <!-- ป้ายแจ้งเตือนเรื่องการใช้งานเบราว์เซอร์ (แบบโปร่ง ไม่มีกรอบ) -->
+        <div class="flex justify-center px-2 md:px-4 w-full mt-4">
+            <div class="flex items-center justify-center gap-3 sm:gap-6 md:gap-10 w-full max-w-3xl">
+                
+                <!-- 1. รูปด้านซ้าย: คอม + มือถือ -->
+                <div class="flex-shrink-0 transform hover:scale-105 transition-transform">
+                    <img loading="lazy" decoding="async" src="/devices.webp" width="320" height="191" alt="Computer and Mobile" class="h-10 sm:h-12 md:h-16 w-auto object-contain rounded-lg">
+                </div>
+
+                <!-- 2. ข้อความตรงกลาง -->
+                <div class="text-slate-300 text-xs sm:text-sm md:text-lg font-medium leading-relaxed text-center">
+                    ใช้งานผ่านเบราว์เซอร์ <span class="text-white font-bold text-sm sm:text-base md:text-xl">Google Chrome</span><br>
+                    ได้ทั้งคอม และ มือถือสมาร์ทโฟน
+                </div>
+
+                <!-- 3. รูปด้านขวา: โลโก้ Google Chrome -->
+                <div class="flex-shrink-0 transform hover:scale-105 transition-transform">
+                    <img loading="lazy" decoding="async" src="/chrome.webp" width="128" height="128" alt="Google Chrome Logo" class="h-10 w-10 sm:h-12 sm:w-12 md:h-16 md:w-16 object-contain drop-shadow-lg">
+                </div>
+                
+            </div>
+        </div>
+    </section>

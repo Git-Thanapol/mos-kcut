@@ -1,0 +1,29 @@
+---
+const { clips } = Astro.props;
+---
+    <section class="container mx-auto px-4 py-12 md:py-16 max-w-6xl">
+        <h3 class="text-3xl md:text-4xl font-bold text-center mb-4 text-white">ตัวอย่างไฟล์ผลงานที่ทำผ่านระบบ<span class="text-amber-500">KCUT</span></h3>
+        <p class="text-center text-slate-300 mb-8 md:mb-10 text-lg">ผลงานจริงที่ได้จากระบบ KCUT ช่วยตัดต่อ ใส่ซับ และแยกเสียง</p>
+        
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-8">
+            
+{clips.map((c, i) => (
+            <div class="bg-slate-800 rounded-xl md:rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl hover:border-amber-500 transition-all duration-300 border border-slate-700">
+                <div class="relative aspect-[3/4] bg-slate-900 group cursor-pointer">
+                    <div class="absolute top-2 left-2 bg-slate-900/80 backdrop-blur-sm text-white font-bold text-[10px] md:text-xs px-2 py-1 rounded-md z-10 shadow border border-slate-700">{c.views} วิว</div>
+                    <img src={c.cover} alt={`ปกคลิป ${i + 1}`} loading="lazy" decoding="async" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition duration-300">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
+                        <div class="w-10 h-10 md:w-16 md:h-16 bg-blue-600 rounded-full flex items-center justify-center border-2 border-white shadow-lg group-hover:scale-110 transition-transform">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 md:h-8 md:w-8 text-white ml-1" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z" /></svg>
+                        </div>
+                    </div>
+                    <div class="absolute bottom-3 left-0 w-full text-center pointer-events-none z-10"><span class="text-white font-semibold text-[10px] md:text-sm drop-shadow-md">กดดูคลิป</span></div>
+                </div>
+                <div class="p-3 md:p-4 text-left">
+                    <h4 class="text-white font-bold text-xs md:text-lg mb-1 truncate">{c.title}</h4>
+                    <p class="text-slate-400 text-[10px] md:text-sm truncate">{c.subtitle}</p>
+                </div>
+            </div>
+))}
+        </div>
+    </section>

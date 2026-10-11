@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/Nav.astro';
+import Hero from '../components/Hero.astro';
+import Steps from '../components/Steps.astro';
+import Portfolio from '../components/Portfolio.astro';
+import Reviews from '../components/Reviews.astro';
+import Packages from '../components/Packages.astro';
+import Checkout from '../components/Checkout.astro';
+import Contact from '../components/Contact.astro';
+import Modals from '../components/Modals.astro';
+import { getContent } from '../data/content';
+
+const { hero, features, clips, reviews } = await getContent();
+---
+<Base>
+    <Nav />
+    <Hero hero={hero} features={features} />
+    <Steps />
+    <Portfolio clips={clips} />
+    <Reviews reviews={reviews} />
+    <Packages />
+    <Checkout />
+    <Contact />
+    <Modals />
+</Base>
