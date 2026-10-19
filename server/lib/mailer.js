@@ -36,6 +36,23 @@ export function createMailer() {
 
   return {
     name: real ? 'smtp' : 'file (mock)',
+    // new order: tell the shop a slip is waiting for review (never blocks the customer)
+    async orderReceived(o, dupOf) {
+      const lines = ['มีคำสั่งซื้อใหม่ รอตรวจสลิป'];
+      if (dupOf) lines.push(`⚠ สลิปนี้ซ้ำกับออเดอร์ ${dupOf}`);
+      lines.push('', summary(o), '', 'ตรวจสลิปที่หน้า /admin');
+      try { await send({ to: shop, subject: `[KCUT] ออเดอร์ใหม่ ${o.id} - ${baht(o.amount)} บาท (รอตรวจสลิป)`, text: lines.join('\n') }); return true; }
+      catch (e) { console.error('[mail] failed:', e.message); return false; }
+    },
+    // slip rejected: tell the customer (if they left an email) to re-send the slip via LINE
+    async orderRejected(o, note) {
+      if (!o.email) return null;
+      const lines = [`สวัสดีคุณ ${o.firstName}`, '', `เราตรวจสลิปของคำสั่งซื้อ ${o.id} แล้วยังยืนยันการชำระเงินไม่ได้`];
+      if (note) lines.push(`เหตุผล: ${note}`);
+      lines.push('', `กรุณาส่งสลิปที่ถูกต้องทาง LINE: @spgo (https://lin.ee/YmWfY9Kv) พร้อมแจ้งเลขที่ ${o.id}`);
+      try { await send({ to: o.email, subject: `KCUT ตรวจสลิปไม่ผ่าน ${o.id}`, text: lines.join('\n') }); return true; }
+      catch (e) { console.error('[mail] failed:', e.message); return false; }
+    },
     // called when an order becomes paid: customer confirmation (if they gave an email) + shop notification
     async orderPaid(o) {
       const jobs = [send({ to: shop, subject: `[KCUT] ชำระเงินแล้ว ${o.id} - ${baht(o.amount)} บาท`, text: `มีคำสั่งซื้อที่ชำระเงินแล้ว\n\n${summary(o)}` })];

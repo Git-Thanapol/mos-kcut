@@ -8,9 +8,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run media` — regenerates `public/` WebP images and 720p videos from the originals in `KCUT_PROTOTYPE/` (needs those originals; do not hand-edit `public/` media).
 - `npm run address` rebuilds `public/thai-address.json`; `npm run placeholders` rewrites the mock covers.
 - `server/` (run `npm start` there): order API + `/admin`, plain Node with one dependency (nodemailer). `npm run dev` in `site/` proxies `/api` and `/admin` to it; `astro preview` does not.
-- Plan and stages: `docs/PLAN.md`. Mocks still in place: file order store, file mail outbox, placeholder covers, Sanity (defaults used). Env vars in `server/.env.example` switch them to Supabase / Gmail.
+- Plan and stages: `docs/PLAN.md`. Mocks still in place: mail goes to `server/data/outbox` until `SMTP_PASS` is set, placeholder covers. Orders are real: SQLite + slip files, reviewed by hand in `/admin`.
+- `cd server && npm test` runs the API tests (needs Node 22.18+: `node:sqlite` and native TS stripping, because `server.js` and the tests import `site/src/data/defaults.ts`); `npm run serve` in `site/` serves `dist/` like production; `scripts/compare-shots.mjs` diffs screenshots against the prototype.
 
 ## Current state
+
+Content admin (stage 2, replaces Sanity): `/admin/content` (page in `server/admin/`, API in `server/lib/content-admin.js`, behind the same Basic auth as `/admin`) edits `site/data/content.json`; `getContent()` reads it at build time and falls back to `defaults.ts` if missing/invalid (validation in `server/lib/schema.js`, shared by the site and the server). Saving queues `astro build --outDir site/releases/<ts>` and swaps the `site/dist` symlink. Uploads are compressed into `site/public/media/` (sharp, ffmpeg via `FFMPEG_PATH`). `site/data/`, `site/public/media/` and `site/releases/` are git-ignored runtime data. `sanity/` is now unused.
 
 `site/` is the new Astro port (the checkout form now posts orders to `/api/order`; `public/address.js` fills the address from `public/thai-address.json`; the page already has a fixed mobile LINE bar from the prototype, so do not add another) (components in `src/components`, fallback content in `src/data/defaults.ts`, read through `getContent()` in `src/data/content.ts`, browser scripts in `public/checkout.js` and `public/modals.js`). `KCUT_PROTOTYPE/` is the untouched reference and must keep matching it visually (section heights were verified identical at 1280px). There is no test suite or linter. The repo holds:
 
@@ -38,4 +41,4 @@ To view the prototype, open `KCUT_PROTOTYPE/index.html` directly in a browser (a
 - `CMS.md` requires the migrated landing page to look identical to the prototype. Reuse the existing Tailwind classes and markup rather than redesigning.
 - UI copy is Thai. Keep new user-facing text, including admin and error messages, in Thai.
 - `CMS.md` says to ask the user which payment method to support (bank transfer + slip, PromptPay QR, Omise, Stripe) before building the real payment step. Until then, admins mark orders paid manually.
-- Secrets (Supabase service role key, Gmail SMTP App Password) must come from env vars. Only a placeholder `.env.example` may be committed.
+- Secrets (admin password, Gmail SMTP App Password) must come from env vars. Only a placeholder `.env.example` may be committed.

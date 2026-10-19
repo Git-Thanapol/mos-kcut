@@ -2,7 +2,15 @@
   "name": "kcut-api",
   "private": true,
   "type": "module",
-  "engines": { "node": ">=20" },
-  "scripts": { "start": "node server.js" },
-  "dependencies": { "nodemailer": "^6.9.16" }
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test \"test/*.test.js\""
+  },
+  "dependencies": {
+    "nodemailer": "^6.9.16",
+    "sharp": "^0.35.5"
+  }
 }

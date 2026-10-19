@@ -44,7 +44,7 @@ export function parseOrder(body) {
     if (data.length > 5 * 1024 * 1024) return { error: 'ไฟล์สลิปใหญ่เกิน 5 MB' };
     const type = MAGIC.find((t) => t.test(data));
     if (!type) return { error: 'ไฟล์สลิปไม่ใช่รูปภาพที่รองรับ' };
-    slip = { file: `${id}.${type.ext}`, contentType: type.mime, data };
+    slip = { file: `${id}.${type.ext}`, contentType: type.mime, data, hash: crypto.createHash('sha256').update(data).digest('hex') };
   }
 
   return {

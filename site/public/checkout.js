@@ -109,6 +109,40 @@ function readAsDataUrl(file) {
     });
 }
 
+// Slips from a phone camera can be several MB: shrink anything over ~1.2 MB to max 1800 px JPEG so the upload is
+// fast on mobile data and stays under the server's 5 MB limit. Small files are sent untouched.
+function prepareSlip(file) {
+    if (file.size <= 1.2 * 1024 * 1024) return readAsDataUrl(file);
+    return new Promise(function (resolve) {
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function () {
+            var scale = Math.min(1, 1800 / Math.max(img.width, img.height));
+            var c = document.createElement('canvas');
+            c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
+            var ctx = c.getContext('2d');
+            ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);   // PNG transparency -> white
+            ctx.drawImage(img, 0, 0, c.width, c.height);
+            URL.revokeObjectURL(url);
+            resolve(c.toDataURL('image/jpeg', 0.85));
+        };
+        img.onerror = function () { URL.revokeObjectURL(url); resolve(readAsDataUrl(file)); };   // fall back to the original
+        img.src = url;
+    });
+}
+
+// show which slip was picked (name + small preview) right under the button
+document.addEventListener('change', function (e) {
+    if (e.target.id !== 'slipInput') return;
+    var file = e.target.files && e.target.files[0];
+    var name = document.getElementById('slipName'), prev = document.getElementById('slipPreview');
+    if (!file) { name.classList.add('hidden'); prev.classList.add('hidden'); return; }
+    name.textContent = '✓ เลือกไฟล์แล้ว: ' + file.name;
+    name.classList.remove('hidden');
+    if (prev.src) URL.revokeObjectURL(prev.src);
+    prev.src = URL.createObjectURL(file);
+    prev.classList.remove('hidden');
+});
+
 // ส่งออเดอร์ไปที่ API (ตั้ง window.KCUT_API ได้ถ้า API อยู่คนละโดเมน) แล้วค่อยพาไป LINE
 async function submitCheckout(event) {
     event.preventDefault();
@@ -128,7 +162,7 @@ async function submitCheckout(event) {
     var slip = f.slip.files && f.slip.files[0];
     if (pay.value === 'transfer') {
         if (!slip) { showFormError('กรุณาแนบสลิปการโอนเงิน'); return; }
-        if (slip.size > 5 * 1024 * 1024) { showFormError('ไฟล์สลิปใหญ่เกิน 5 MB กรุณาเลือกไฟล์ใหม่'); return; }
+        if (slip.size > 20 * 1024 * 1024) { showFormError('ไฟล์สลิปใหญ่เกินไป กรุณาเลือกรูปที่เล็กกว่า 20 MB'); return; }
     }
 
     btn.innerHTML = 'กำลังประมวลผล...';
@@ -147,7 +181,7 @@ async function submitCheckout(event) {
             province: f.province.options[f.province.selectedIndex].text,
             zip: f.zip.value,
             note: f.note.value.trim(),
-            slip: pay.value === 'transfer' && slip ? { name: slip.name, dataUrl: await readAsDataUrl(slip) } : null
+            slip: pay.value === 'transfer' && slip ? { name: slip.name, dataUrl: await prepareSlip(slip) } : null
         };
         var res = await fetch((window.KCUT_API || '') + '/api/order', {
             method: 'POST',

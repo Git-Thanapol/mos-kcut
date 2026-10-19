@@ -98,28 +98,28 @@
                     <div class="space-y-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div>
-                                <label class="block text-sm font-bold text-[#0A1224] mb-2">ชื่อ</label>
-                                <input type="text" name="firstName" autocomplete="given-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                <label for="f-firstName" class="block text-sm font-bold text-[#0A1224] mb-2">ชื่อ</label>
+                                <input type="text" id="f-firstName" name="firstName" autocomplete="given-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold text-[#0A1224] mb-2">นามสกุล</label>
-                                <input type="text" name="lastName" autocomplete="family-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                                <label for="f-lastName" class="block text-sm font-bold text-[#0A1224] mb-2">นามสกุล</label>
+                                <input type="text" id="f-lastName" name="lastName" autocomplete="family-name" maxlength="60" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-[#0A1224] mb-2">เบอร์โทรศัพท์</label>
-                            <input type="tel" name="phone" autocomplete="tel" inputmode="numeric" maxlength="10" placeholder="เช่น 0812345678" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <label for="f-phone" class="block text-sm font-bold text-[#0A1224] mb-2">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="f-phone" name="phone" autocomplete="tel" inputmode="numeric" maxlength="10" placeholder="เช่น 0812345678" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-[#0A1224] mb-2">อีเมล (ไม่บังคับ — ใช้รับอีเมลยืนยันคำสั่งซื้อ)</label>
-                            <input type="email" name="email" autocomplete="email" maxlength="120" placeholder="เช่น name@email.com" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
+                            <label for="f-email" class="block text-sm font-bold text-[#0A1224] mb-2">อีเมล (ไม่บังคับ — ใช้รับอีเมลยืนยันคำสั่งซื้อ)</label>
+                            <input type="email" id="f-email" name="email" autocomplete="email" maxlength="120" placeholder="เช่น name@email.com" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition">
                         </div>
 
                         <div>
-                            <label class="block text-sm font-bold text-[#0A1224] mb-2">บ้านเลขที่ หมู่บ้าน อาคาร ซอย ถนน</label>
-                            <textarea rows="2" name="address1" autocomplete="street-address" maxlength="200" placeholder="เช่น 12/34 หมู่บ้านสุขใจ ซอย 5" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
+                            <label for="f-address1" class="block text-sm font-bold text-[#0A1224] mb-2">บ้านเลขที่ หมู่บ้าน อาคาร ซอย ถนน</label>
+                            <textarea rows="2" id="f-address1" name="address1" autocomplete="street-address" maxlength="200" placeholder="เช่น 12/34 หมู่บ้านสุขใจ ซอย 5" required class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
                         </div>
 
                         <div class="relative">
@@ -159,7 +159,7 @@
                                 <span class="mr-2 transform group-open:rotate-90 transition-transform">▶</span> เพิ่มหมายเหตุ (ไม่บังคับ)
                             </summary>
                             <div class="p-4 bg-white">
-                                <textarea rows="2" name="note" maxlength="300" placeholder="เช่น ฝากไว้ที่นิติบุคคล" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
+                                <textarea rows="2" name="note" aria-label="หมายเหตุ" maxlength="300" placeholder="เช่น ฝากไว้ที่นิติบุคคล" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"></textarea>
                             </div>
                         </details>
                     </div>
@@ -229,9 +229,11 @@
                             <h4 class="font-bold text-[#0A1224] mb-3">แนบรูปสลิปโอนเงิน</h4>
                             <label class="block w-full border border-blue-500 text-blue-600 hover:bg-blue-50 text-center font-bold py-3 rounded-lg cursor-pointer transition-colors">
                                 เลือกรูปสลิปจากเครื่อง +
-                                <input type="file" name="slip" accept="image/jpeg, image/png, image/webp" class="hidden" required id="slipInput">
+                                <input type="file" name="slip" aria-label="แนบรูปสลิปโอนเงิน" accept="image/jpeg, image/png, image/webp" class="hidden" required id="slipInput">
                             </label>
                             <p class="text-xs text-gray-500 mt-2">เลือกรูป JPG, PNG หรือ WebP ขนาดไม่เกิน 5 MB</p>
+                            <p id="slipName" class="hidden text-sm font-bold text-green-700 mt-2 break-all"></p>
+                            <img id="slipPreview" alt="ตัวอย่างสลิป" class="hidden mt-2 max-h-40 rounded-lg border border-gray-300">
                         </div>
                     </div>
                 </div>

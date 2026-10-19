@@ -1,5 +1,7 @@
 # KCUT — Deployment plan (Ubuntu server)
 
+> Step-by-step runbook for an agent on the server: `docs/DEPLOY-AGENT.md` (authoritative). This file is the background; its step 3 (rsync to `/var/www/kcut/current`) is superseded because the content admin builds on the server and owns the `dist` symlink.
+
 Target: Ubuntu 22.04/24.04 LTS, single VPS. The public page is static files served by nginx; the only running process is a small Node service for orders (added in stage 3).
 
 ## What gets deployed
@@ -8,16 +10,16 @@ Target: Ubuntu 22.04/24.04 LTS, single VPS. The public page is static files serv
 |---|---|---|
 | Static site (`site/dist`) | built (stage 1) | nginx serves files, no process |
 | Order API (`server/`: `POST /api/order`, `/admin`, paid emails) | built; mock store/mail until env vars are set | Node service via systemd, behind nginx |
-| Rebuild webhook (Sanity "Publish" -> rebuild) | **not built yet** (stage 2) | same Node service |
-| Content (Sanity) / orders (Supabase) | hosted SaaS | nothing on the server |
+| Content admin (`/admin/content`: edit text/media, upload, rebuild + publish) | built (stage 2, replaces Sanity) | same Node service; writes `site/data/content.json`, `site/public/media/`, builds into `site/releases/`, swaps the `site/dist` symlink |
+| Orders + payment slips | SQLite file `kcut.db` and `slips/` in `/var/lib/kcut` | inside the API service, back them up |
 
-The API (step 6) is ready to deploy; with no Supabase/SMTP variables it runs on the mock store (`data/` folder), so set the real ones before go-live. Sanity (step 7) is still open.
+The API (step 6) is ready to deploy. It needs Node 22.18+ (built-in SQLite, and native TypeScript stripping for `site/src/data/defaults.ts`). Mail stays on the mock outbox until `SMTP_PASS` is set, so set it before go-live. The content admin (step 7) rebuilds the site on the server, so the server needs the whole repo, `site/` dev dependencies and ffmpeg.
 
 ## 0. Before you start (decisions / inputs)
 - Domain name and DNS A record pointing at the server IP (also AAAA if IPv6).
 - Server: 1 vCPU / 1 GB RAM is enough. Open ports 22, 80, 443 only.
 - Static IP or provider firewall available.
-- Later: Sanity project id, Supabase URL + service key, Gmail App Password (env vars only, never in git).
+- Later: Sanity project id, Gmail App Password (env vars only, never in git).
 
 ## 1. Server hardening (once)
 ```bash
@@ -29,8 +31,8 @@ sudo apt -y install nginx ufw unattended-upgrades fail2ban
 sudo ufw allow OpenSSH && sudo ufw allow 'Nginx Full' && sudo ufw enable
 ```
 
-## 2. Build (on your PC or CI — not on the server)
-Building on the PC keeps Node, ffmpeg and sharp off the server.
+## 2. Build (first build on your PC or CI; later builds by the content admin on the server)
+The first deploy can ship a PC-built `dist`. Once the content admin is enabled (step 7) the server itself builds, so it needs Node, `npm ci` in `site/` and `server/`, and `apt install ffmpeg`.
 ```bash
 cd site
 npm ci
@@ -57,7 +59,7 @@ Each deploy is a new release directory plus an atomic symlink switch.
 server {
     listen 80;
     server_name example.com www.example.com;
-    root /var/www/kcut/current;
+    root /opt/kcut/site/dist;   # symlink swapped by the content admin (step 7)
     index index.html;
 
     gzip on;
@@ -78,8 +80,11 @@ server {
     # mp4 seeking / streaming
     location ~* \.mp4$ { mp4; add_header Accept-Ranges bytes; }
 
-    location ~ ^/(api|admin)/? { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
-                                 proxy_set_header X-Real-IP $remote_addr; client_max_body_size 8m; }
+    # ^~ so the regex rules above (.js, .webp, .mp4) never catch /admin/content.js or /admin/slips/*.webp
+    location ^~ /admin { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
+                         proxy_set_header X-Real-IP $remote_addr; client_max_body_size 8m; }
+    location ^~ /api/  { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;
+                         proxy_set_header X-Real-IP $remote_addr; client_max_body_size 8m; }
 
     add_header X-Frame-Options SAMEORIGIN;
     add_header Referrer-Policy strict-origin-when-cross-origin;
@@ -99,8 +104,8 @@ sudo systemctl status certbot.timer     # auto-renewal
 ```
 
 ## 6. Order API service (`server/` in this repo)
-- Copy `server/` to `/opt/kcut-api` (`npm ci --omit=dev`), run by a dedicated `kcut` user; `ExecStart` is `node server.js`. Set `DATA_DIR=/var/lib/kcut` if you stay on the file store. Node 22 LTS from NodeSource (`apt`).
-- Variables are listed in `server/.env.example`. Secrets in `/etc/kcut/api.env` (`chmod 600`, owner `kcut`): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SHOP_NOTIFY_EMAIL`, `WEBHOOK_SECRET`. Never in the repo or the logs.
+- Check the whole repo out to `/opt/kcut` and run `npm ci --omit=dev` in `server/` (`server.js` imports `../site/src/data/defaults.ts`, so `site/` must sit next to `server/`); run by a dedicated `kcut` user; `ExecStart` is `node server.js` with `WorkingDirectory=/opt/kcut/server`. Set `DATA_DIR=/var/lib/kcut` (owned by `kcut`); the SQLite file and the slips live there. Node 22 LTS from NodeSource (`apt`).
+- Variables are listed in `server/.env.example`. Secrets in `/etc/kcut/api.env` (`chmod 600`, owner `kcut`): `ADMIN_PASSWORD` (required: otherwise a random one per restart), `TRUST_PROXY=1` (required behind nginx: otherwise every visitor looks like 127.0.0.1 and five wrong passwords from anyone lock the owner out; never set it without nginx in front, clients could spoof `X-Real-IP`), `DATA_DIR`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SHOP_NOTIFY_EMAIL`, `WEBHOOK_SECRET`. Never in the repo or the logs.
 - `/etc/systemd/system/kcut-api.service`:
   ```ini
   [Unit]
@@ -108,7 +113,7 @@ sudo systemctl status certbot.timer     # auto-renewal
   After=network.target
   [Service]
   User=kcut
-  WorkingDirectory=/opt/kcut-api
+  WorkingDirectory=/opt/kcut/server
   EnvironmentFile=/etc/kcut/api.env
   ExecStart=/usr/bin/node server.js
   Restart=on-failure
@@ -123,13 +128,23 @@ sudo systemctl status certbot.timer     # auto-renewal
 - Staff mark orders paid at `https://example.com/admin` (HTTP basic auth with `ADMIN_PASSWORD`, so keep HTTPS on); that call sends both emails. Proxy `/api/` and `/admin` to 127.0.0.1:3000 in nginx.
 - Outbound SMTP: many VPS providers block port 465/25. Test `openssl s_client -connect smtp.gmail.com:465` before go-live.
 
-## 7. Content updates (stage 2)
-Sanity Publish -> webhook -> `/api/rebuild` -> server runs `npm ci && npm run build` in a build directory and swaps the `current` symlink (needs Node on the server, but not ffmpeg because `public/` media is committed or synced). Simpler alternative: staff publish in Sanity, and a GitHub Action does the build and `rsync` on webhook. Pick one before stage 2.
+## 7. Content admin (stage 2)
+The owner opens `https://example.com/admin/content` (same HTTP basic auth password as `/admin`), edits the hero, 10 features, 6 clips and 3 reviews, uploads images/videos (compressed on the server: WebP max 1600 px, mp4 max 720p) and presses "บันทึกและเผยแพร่". The service writes `site/data/content.json`, runs `astro build --outDir site/releases/<timestamp>` and then atomically repoints the `site/dist` symlink; a failed build leaves the live site untouched. The last 3 releases are kept.
+- Check out the repo on the server (e.g. `/opt/kcut`), run `npm ci` in `site/` and `server/`, set `SITE_DIR=/opt/kcut/site` in `/etc/kcut/api.env`, and point nginx `root` at `/opt/kcut/site/dist` (symlink, nginx follows it).
+- The `kcut` user must own `site/` (writes `dist`, `releases/`, `data/`, `public/media/`). With `ProtectSystem=strict` add `ReadWritePaths=/opt/kcut/site` and `Environment=FFMPEG_PATH=/usr/bin/ffmpeg` and `Environment=ASTRO_TELEMETRY_DISABLED=1` to the unit. A build that runs longer than 10 minutes is killed and reported as failed.
+- nginx: the `/admin` and `/api/` locations must be `^~` prefix locations (as in step 4) so the regex rule for `.js`/`.webp` files does not swallow `/admin/content.js` or `/admin/slips/*.webp`. Uploads are up to 300 MB, so add before the generic proxy block:
+  ```nginx
+  location = /api/admin/upload { client_max_body_size 300m; proxy_request_buffering off; proxy_read_timeout 600s;
+    proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host; proxy_set_header X-Real-IP $remote_addr; }
+  ```
+- Rollback: `ln -sfn /opt/kcut/site/releases/<older> /opt/kcut/site/dist.tmp && mv -T /opt/kcut/site/dist.tmp /opt/kcut/site/dist`.
+- The first publish moves an existing real `dist/` folder to `releases/initial-<time>`.
+- Wrong admin password 5 times from one IP gives 429 for 15 minutes (applies to `/admin` too). Back up `site/data/` (content + original uploads) with the orders data.
 
 ## 8. Monitoring and backups
 - Uptime check on `https://example.com/` (UptimeRobot or similar, free).
 - `logrotate` is default for nginx; keep access logs 14 days.
-- Backups: static site is rebuildable from git; orders live in Supabase (enable its daily backups, or `pg_dump` weekly if you self-host Postgres); keep `/etc/kcut/api.env` in a password manager.
+- Backups: the static site is rebuildable from git; orders and slips are in `/var/lib/kcut`: nightly `sqlite3 /var/lib/kcut/kcut.db ".backup /backup/kcut-$(date +%F).db"` plus `rsync -a /var/lib/kcut/slips/ /backup/slips/`, copied off the server; keep `/etc/kcut/api.env` in a password manager.
 - Unattended security upgrades stay on; reboot window monthly.
 
 ## 9. Go-live checklist
@@ -140,7 +155,7 @@ Sanity Publish -> webhook -> `/api/rebuild` -> server runs `npm ci && npm run bu
 - [ ] Missing `cover1–6.jpg` supplied (currently 404)
 - [ ] Lighthouse mobile run, performance score recorded as a baseline
 - [ ] Rollback tested once (switch the symlink back and forth)
-- [ ] Stage 3: test order -> row in Supabase -> mark paid -> both emails received
+- [ ] Test order with a slip -> appears in /admin as รอตรวจสลิป -> confirm -> both emails received; reject -> customer email received
 - [ ] No secrets in the repo (`git grep -i "pass\|secret\|service_role"`)
 
 ## Open questions

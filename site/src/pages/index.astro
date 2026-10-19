@@ -15,6 +15,7 @@ const { hero, features, clips, reviews } = await getContent();
 ---
 <Base>
     <Nav />
+    <main>
     <Hero hero={hero} features={features} />
     <Steps />
     <Portfolio clips={clips} />
@@ -22,5 +23,6 @@ const { hero, features, clips, reviews } = await getContent();
     <Packages />
     <Checkout />
     <Contact />
+    </main>
     <Modals />
 </Base>
