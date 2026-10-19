@@ -1,5 +1,7 @@
 # KCUT — Deployment plan (Ubuntu server)
 
+> Step-by-step runbook for an agent on the server: `docs/DEPLOY-AGENT.md` (authoritative). This file is the background; its step 3 (rsync to `/var/www/kcut/current`) is superseded because the content admin builds on the server and owns the `dist` symlink.
+
 Target: Ubuntu 22.04/24.04 LTS, single VPS. The public page is static files served by nginx; the only running process is a small Node service for orders (added in stage 3).
 
 ## What gets deployed
