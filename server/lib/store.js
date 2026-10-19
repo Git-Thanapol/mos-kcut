@@ -1,87 +1,68 @@
-// Order storage. Two interchangeable backends with the same interface:
-//   file     (default, MOCK)  -> data/orders.json + data/slips/*
-//   supabase (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY) -> table `orders` + Storage bucket `slips`
-//                                (see ../supabase.sql — NOT yet tested against a real project)
-// Interface: create(order, slip) -> order | list() -> order[] | get(id) | markPaid(id) -> {order, changed}
-//            slipFile(name) -> {contentType, data} | null
+// Order storage: SQLite (built-in node:sqlite, Node >= 22.13) in DATA_DIR/kcut.db; payment slips are files in DATA_DIR/slips.
+// Status flow (manual review of the uploaded slip):  pending -> paid | rejected,  rejected -> paid.  `paid` is final.
 import fs from 'node:fs';
 import path from 'node:path';
+import { DatabaseSync } from 'node:sqlite';
 
-const DATA = process.env.DATA_DIR || path.resolve('data');
-
-function fileStore() {
-  const ordersFile = path.join(DATA, 'orders.json');
-  const slipsDir = path.join(DATA, 'slips');
+export function createStore(dataDir = process.env.DATA_DIR || path.resolve('data')) {
+  const slipsDir = path.join(dataDir, 'slips');
   fs.mkdirSync(slipsDir, { recursive: true });
-  const read = () => (fs.existsSync(ordersFile) ? JSON.parse(fs.readFileSync(ordersFile, 'utf8')) : []);
-  const write = (all) => {
-    fs.writeFileSync(ordersFile + '.tmp', JSON.stringify(all, null, 2));
-    fs.renameSync(ordersFile + '.tmp', ordersFile);   // atomic replace
+  const db = new DatabaseSync(path.join(dataDir, 'kcut.db'));
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    CREATE TABLE IF NOT EXISTS orders (
+      id          TEXT PRIMARY KEY,
+      status      TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','paid','rejected')),
+      amount      INTEGER NOT NULL,
+      created_at  TEXT NOT NULL,
+      reviewed_at TEXT,
+      review_note TEXT,
+      slip_hash   TEXT,
+      data        TEXT NOT NULL            -- full order as JSON (customer, address, package, slip file name)
+    );
+    CREATE INDEX IF NOT EXISTS orders_created ON orders (created_at DESC);
+    CREATE INDEX IF NOT EXISTS orders_slip_hash ON orders (slip_hash);
+  `);
+
+  const q = {
+    insert: db.prepare('INSERT INTO orders (id, status, amount, created_at, slip_hash, data) VALUES (?, ?, ?, ?, ?, ?)'),
+    get: db.prepare('SELECT * FROM orders WHERE id = ?'),
+    list: db.prepare('SELECT * FROM orders ORDER BY created_at DESC LIMIT ?'),
+    setStatus: db.prepare('UPDATE orders SET status = ?, reviewed_at = ?, review_note = ? WHERE id = ?'),
+    byHash: db.prepare('SELECT id FROM orders WHERE slip_hash = ? AND id != ? ORDER BY created_at LIMIT 1'),
   };
+  const toOrder = (r) => r && ({ ...JSON.parse(r.data), status: r.status, reviewedAt: r.reviewed_at, reviewNote: r.review_note });
   const types = { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' };
+
   return {
-    name: 'file (mock)',
-    async create(order, slip) {
+    name: `sqlite (${path.join(dataDir, 'kcut.db')})`,
+    create(order, slip) {
       if (slip) {
         fs.writeFileSync(path.join(slipsDir, slip.file), slip.data);
         order.slipFile = slip.file;
+        order.slipHash = slip.hash;
       }
-      const all = read(); all.push(order); write(all);
+      q.insert.run(order.id, order.status, order.amount, order.createdAt, slip ? slip.hash : null, JSON.stringify(order));
       return order;
     },
-    async list() { return read().reverse(); },
-    async get(id) { return read().find((o) => o.id === id) || null; },
-    async markPaid(id) {
-      const all = read();
-      const o = all.find((x) => x.id === id);
-      if (!o) return null;
-      if (o.status === 'paid') return { order: o, changed: false };
-      o.status = 'paid'; o.paidAt = new Date().toISOString();
-      write(all);
-      return { order: o, changed: true };
+    list(limit = 500) { return q.list.all(limit).map(toOrder); },
+    get(id) { return toOrder(q.get.get(id)); },
+    // the id of an EARLIER order that used the identical slip file (re-used slip), or null
+    duplicateOf(hash, id) { return hash ? q.byHash.get(hash, id)?.id ?? null : null; },
+    // returns null (unknown id) or { order, changed } ; changed=false when nothing had to change
+    review(id, status, note = '') {
+      const row = q.get.get(id);
+      if (!row) return null;
+      const allowed = status === 'paid' ? row.status !== 'paid' : row.status === 'pending';
+      if (!allowed) return { order: toOrder(row), changed: false };
+      q.setStatus.run(status, new Date().toISOString(), note || null, id);
+      return { order: this.get(id), changed: true };
     },
-    async slipFile(name) {
+    slipFile(name) {
       if (!/^[A-Za-z0-9-]+\.(jpg|png|webp)$/.test(name)) return null;
       const f = path.join(slipsDir, name);
       return fs.existsSync(f) ? { contentType: types[name.split('.').pop()], data: fs.readFileSync(f) } : null;
     },
+    close() { db.close(); },
   };
-}
-
-function supabaseStore(url, key) {
-  const h = { apikey: key, Authorization: `Bearer ${key}` };
-  const rest = (q, init = {}) => fetch(`${url}/rest/v1/orders${q}`, { ...init, headers: { ...h, 'Content-Type': 'application/json', ...(init.headers || {}) } });
-  const row = (o) => ({ id: o.id, status: o.status, amount: o.amount, created_at: o.createdAt, paid_at: o.paidAt || null, data: o });
-  const unrow = (r) => ({ ...r.data, status: r.status, paidAt: r.paid_at });
-  const ok = async (res) => { if (!res.ok) throw new Error(`supabase ${res.status}: ${await res.text()}`); return res; };
-  return {
-    name: 'supabase',
-    async create(order, slip) {
-      if (slip) {
-        await ok(await fetch(`${url}/storage/v1/object/slips/${slip.file}`, { method: 'POST', headers: { ...h, 'Content-Type': slip.contentType }, body: slip.data }));
-        order.slipFile = slip.file;
-      }
-      await ok(await rest('', { method: 'POST', body: JSON.stringify(row(order)) }));
-      return order;
-    },
-    async list() { return (await (await ok(await rest('?select=*&order=created_at.desc&limit=200'))).json()).map(unrow); },
-    async get(id) { const r = await (await ok(await rest(`?id=eq.${encodeURIComponent(id)}&select=*`))).json(); return r[0] ? unrow(r[0]) : null; },
-    async markPaid(id) {
-      const body = JSON.stringify({ status: 'paid', paid_at: new Date().toISOString() });
-      const r = await (await ok(await rest(`?id=eq.${encodeURIComponent(id)}&status=neq.paid`, { method: 'PATCH', body, headers: { Prefer: 'return=representation' } }))).json();
-      if (r[0]) return { order: unrow(r[0]), changed: true };
-      const existing = await this.get(id);
-      return existing ? { order: existing, changed: false } : null;
-    },
-    async slipFile(name) {
-      if (!/^[A-Za-z0-9-]+\.(jpg|png|webp)$/.test(name)) return null;
-      const res = await fetch(`${url}/storage/v1/object/slips/${name}`, { headers: h });
-      return res.ok ? { contentType: res.headers.get('content-type'), data: Buffer.from(await res.arrayBuffer()) } : null;
-    },
-  };
-}
-
-export function createStore() {
-  const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = process.env;
-  return SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY ? supabaseStore(SUPABASE_URL.replace(/\/$/, ''), SUPABASE_SERVICE_ROLE_KEY) : fileStore();
 }
