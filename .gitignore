@@ -20,3 +20,10 @@ KCUT_PROTOTYPE/
 Thumbs.db
 .vscode/
 .idea/
+
+# owner content + uploads + build releases (written by server/, see docs/superpowers/specs)
+site/data/
+site/public/media/
+site/releases/
+site/dist.tmp
+site/dist
