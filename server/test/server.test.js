@@ -58,6 +58,23 @@ test('POST /api/order stores a pending order + slip file and emails the shop', a
   assert.ok(outbox().some((f) => f.includes('shop@example.invalid')), 'shop notified of the new order');
 });
 
+test('book orders (345 / 490) are stored as BK- orders with their own package name', async () => {
+  assert.equal(parseOrder(base({ package: '345' })).order.product, 'book');
+  assert.equal(parseOrder(base()).order.product, 'kcut');
+  for (const [pkg, name] of [['345', 'หนังสือ AI 1 เล่ม'], ['490', 'หนังสือ AI + เว็บ Prompt']]) {
+    const res = await post('/api/order', base({ package: pkg, payment: 'cod', slip: null }));
+    assert.equal(res.status, 201);
+    const { orderId } = await res.json();
+    assert.match(orderId, /^BK-\d{6}-[0-9A-F]{6}$/);
+    const o = store.get(orderId);
+    assert.equal(o.amount, Number(pkg)); assert.equal(o.packageName, name); assert.equal(o.product, 'book');
+  }
+  await new Promise((r) => setTimeout(r, 100));
+  const subjects = outbox().map((f) => fs.readFileSync(path.join(DIR, 'outbox', f), 'utf8'));
+  assert.ok(subjects.some((t) => t.includes('Subject: [หนังสือ AI] ออเดอร์ใหม่ BK-')), 'shop mail names the book shop');
+  assert.equal((await post('/api/order', base({ package: '400' }))).status, 400);
+});
+
 test('POST /api/order rejects bad requests', async () => {
   assert.equal((await post('/api/order', base({ phone: 'x' }))).status, 400);
   assert.equal((await fetch(origin + '/api/order', { method: 'POST', body: 'not json' })).status, 400);

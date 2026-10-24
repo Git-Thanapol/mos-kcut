@@ -11,6 +11,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Plan and stages: `docs/PLAN.md`. Mocks still in place: mail goes to `server/data/outbox` until `SMTP_PASS` is set, placeholder covers. Orders are real: SQLite + slip files, reviewed by hand in `/admin`.
 - `cd server && npm test` runs the API tests (needs Node 22.18+: `node:sqlite` and native TS stripping, because `server.js` and the tests import `site/src/data/defaults.ts`); `npm run serve` in `site/` serves `dist/` like production; `scripts/compare-shots.mjs` diffs screenshots against the prototype.
 
+## Site layout (spvdo.com)
+
+Three sites share one domain and one order API: `/` is the product hub (`web/home/index.html`, static, links to both products and LINE), `/books/` is the book shop (`web/books/index.html` + `assets/`, static; its form posts to `/api/order` with package `345` or `490`, stored as `BK-` orders), and `/kcut/` is the Astro site in `site/` (`base: '/kcut'`). Root-relative media in Astro markup and in `content.json` goes through `asset()` in `site/src/data/content.ts`; do not hard-code `/x.webp`. `/admin` and `/api` stay at the domain root. `web/scripts/optimize.mjs` regenerates `web/*/assets` from the originals in `home/` and `เว็บขายหนังสือ/`; nginx layout is in `docs/DEPLOY-AGENT.md` §3.7, and `npm run serve` in `site/` mirrors it locally.
+
 ## Current state
 
 Content admin (stage 2, replaces Sanity): `/admin/content` (page in `server/admin/`, API in `server/lib/content-admin.js`, behind the same Basic auth as `/admin`) edits `site/data/content.json`; `getContent()` reads it at build time and falls back to `defaults.ts` if missing/invalid (validation in `server/lib/schema.js`, shared by the site and the server). Saving queues `astro build --outDir site/releases/<ts>` and swaps the `site/dist` symlink. Uploads are compressed into `site/public/media/` (sharp, ffmpeg via `FFMPEG_PATH`). `site/data/`, `site/public/media/` and `site/releases/` are git-ignored runtime data. `sanity/` is now unused.

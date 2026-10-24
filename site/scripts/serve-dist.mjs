@@ -1,4 +1,5 @@
-// Production-like static server for site/dist (for local checks / Lighthouse; production uses nginx).
+// Production-like static server mirroring the nginx layout: /kcut -> site/dist, /books -> web/books, everything else -> web/home
+// (for local checks / Lighthouse; production uses nginx).
 // gzip for text, long cache for assets, no-cache for HTML, Range for video, /api + /admin proxied to the order API.
 // Run: npm run build && npm run serve   (PORT=4400 API=http://127.0.0.1:3000 to change)
 import http from 'node:http';
@@ -7,6 +8,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const ROOT = path.resolve('dist');
+const MOUNTS = [['/kcut', ROOT], ['/books', path.resolve('../web/books')], ['', path.resolve('../web/home')]];
 const PORT = Number(process.env.PORT || 4400);
 const API = new URL(process.env.API || 'http://127.0.0.1:3000');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.svg': 'image/svg+xml' };
@@ -21,9 +23,11 @@ http.createServer((req, res) => {
     return req.pipe(up);
   }
   let p = decodeURIComponent(url.pathname);
+  if (p === '/kcut' || p === '/books') { res.writeHead(301, { Location: p + '/' }); return res.end(); }
   if (p.endsWith('/')) p += 'index.html';
-  const file = path.join(ROOT, p);
-  if (!file.startsWith(ROOT) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
+  const [prefix, root] = MOUNTS.find(([pre]) => p === pre || p.startsWith(pre + '/'));
+  const file = path.join(root, p.slice(prefix.length));
+  if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
   const ext = path.extname(file), size = fs.statSync(file).size;
   const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=2592000', 'Accept-Ranges': 'bytes' };
 

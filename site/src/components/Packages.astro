@@ -1,7 +1,10 @@
+---
+import { asset } from '../data/content';
+---
     <section class="container mx-auto px-4 py-16 max-w-5xl">
         <h3 class="text-3xl md:text-4xl font-bold text-center mb-10">เลือกแพ็คเกจที่ใช่สำหรับคุณ</h3>
         
-        <img loading="lazy" decoding="async" src="/ads04.webp" width="1280" height="1280" alt="เลือกแพ็คเกจ KCUT" class="mx-auto rounded-xl md:rounded-3xl shadow-2xl w-full mb-10 md:mb-14 border border-slate-700">
+        <img loading="lazy" decoding="async" src={asset('/ads04.webp')} width="1280" height="1280" alt="เลือกแพ็คเกจ KCUT" class="mx-auto rounded-xl md:rounded-3xl shadow-2xl w-full mb-10 md:mb-14 border border-slate-700">
         
         <!-- ========================================== -->
         <!-- ส่วนที่ 1: แพ็คเกจตลอดชีพ (กล่องใหญ่ด้านบน) -->
@@ -14,7 +17,7 @@
             
             <!-- ฝั่งรูปภาพ (ซ้าย) -->
             <div class="w-full md:w-1/2 flex items-center justify-center bg-slate-900/50 p-4 md:p-6">
-                <img loading="lazy" decoding="async" src="/card-lifetime.webp" width="800" height="800" alt="แพ็คเกจ ตลอดชีพ" class="w-full h-auto object-contain rounded-xl shadow-lg hover:scale-105 transition-transform duration-300">
+                <img loading="lazy" decoding="async" src={asset('/card-lifetime.webp')} width="800" height="800" alt="แพ็คเกจ ตลอดชีพ" class="w-full h-auto object-contain rounded-xl shadow-lg hover:scale-105 transition-transform duration-300">
             </div>
             
             <!-- ฝั่งข้อความและราคา (ขวา) -->
@@ -39,7 +42,7 @@
             <!-- แพ็คเกจ 1 เดือน (ซ้าย) -->
             <div class="bg-slate-800 rounded-xl md:rounded-3xl overflow-hidden shadow-xl border border-slate-700 flex flex-col transform hover:-translate-y-1 transition-transform duration-300">
                 <div class="p-2 md:p-6 bg-slate-900/30 flex justify-center">
-                    <img loading="lazy" decoding="async" src="/card-monthly.webp" width="600" height="600" alt="แพ็คเกจ 1 เดือน" class="w-full h-auto max-w-sm object-contain rounded-lg md:rounded-xl shadow-md hover:scale-105 transition-transform duration-300">
+                    <img loading="lazy" decoding="async" src={asset('/card-monthly.webp')} width="600" height="600" alt="แพ็คเกจ 1 เดือน" class="w-full h-auto max-w-sm object-contain rounded-lg md:rounded-xl shadow-md hover:scale-105 transition-transform duration-300">
                 </div>
                 <div class="p-3 md:p-8 text-center flex-grow flex flex-col justify-between">
                     <div class="mb-3 md:mb-6">
@@ -55,7 +58,7 @@
             <!-- แพ็คเกจ 1 ปี (ขวา) -->
             <div class="bg-slate-800 rounded-xl md:rounded-3xl overflow-hidden shadow-xl border border-slate-700 flex flex-col transform hover:-translate-y-1 transition-transform duration-300">
                 <div class="p-2 md:p-6 bg-slate-900/30 flex justify-center">
-                    <img loading="lazy" decoding="async" src="/card-yearly.webp" width="600" height="600" alt="แพ็คเกจ 1 ปี" class="w-full h-auto max-w-sm object-contain rounded-lg md:rounded-xl shadow-md hover:scale-105 transition-transform duration-300">
+                    <img loading="lazy" decoding="async" src={asset('/card-yearly.webp')} width="600" height="600" alt="แพ็คเกจ 1 ปี" class="w-full h-auto max-w-sm object-contain rounded-lg md:rounded-xl shadow-md hover:scale-105 transition-transform duration-300">
                 </div>
                 <div class="p-3 md:p-8 text-center flex-grow flex flex-col justify-between">
                     <div class="mb-3 md:mb-6">
