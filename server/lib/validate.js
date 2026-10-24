@@ -5,7 +5,12 @@ export const PACKAGES = {
   '390': 'แพ็คเกจ 1 เดือน',
   '3990': 'แพ็คเกจ 1 ปี',
   '5990': 'แพ็คเกจ ตลอดชีพ',
+  '345': 'หนังสือ AI 1 เล่ม',
+  '490': 'หนังสือ AI + เว็บ Prompt',
 };
+// Package keys that belong to the book shop (spvdo.com/books); everything else is KCUT.
+const BOOKS = new Set(['345', '490']);
+export const productOf = (pkgKey) => (BOOKS.has(String(pkgKey)) ? 'book' : 'kcut');
 
 const str = (v, max) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 const MAGIC = [
@@ -35,7 +40,8 @@ export function parseOrder(body) {
   if (!o.address1) return { error: 'กรุณากรอกที่อยู่จัดส่ง' };
   if (!o.subdistrict || !o.district || !o.province || !/^\d{5}$/.test(o.zip)) return { error: 'กรุณาเลือกตำบล อำเภอ จังหวัด และรหัสไปรษณีย์' };
 
-  const id = `KC-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+  const product = productOf(pkgKey);
+  const id = `${product === 'book' ? 'BK' : 'KC'}-${new Date().toISOString().slice(2, 10).replace(/-/g, '')}-${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
   let slip = null;
   if (payment === 'transfer') {
     const m = /^data:image\/(?:jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(body.slip?.dataUrl || '');
@@ -48,7 +54,7 @@ export function parseOrder(body) {
   }
 
   return {
-    order: { id, status: 'pending', createdAt: new Date().toISOString(), package: pkgKey, packageName: PACKAGES[pkgKey], amount: Number(pkgKey), payment, ...o },
+    order: { id, status: 'pending', createdAt: new Date().toISOString(), product, package: pkgKey, packageName: PACKAGES[pkgKey], amount: Number(pkgKey), payment, ...o },
     slip,
   };
 }

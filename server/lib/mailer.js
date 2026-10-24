@@ -25,6 +25,9 @@ export function createMailer() {
     console.log(`[mail] -> ${to} "${subject}"`);
   }
 
+  // orders saved before books existed have no `product`: they are KCUT
+  const brand = (o) => (o.product === 'book' ? 'หนังสือ AI' : 'KCUT');
+
   const summary = (o) => [
     `เลขที่คำสั่งซื้อ: ${o.id}`,
     `แพ็คเกจ: ${o.packageName} (${baht(o.amount)} บาท)`,
@@ -41,7 +44,7 @@ export function createMailer() {
       const lines = ['มีคำสั่งซื้อใหม่ รอตรวจสลิป'];
       if (dupOf) lines.push(`⚠ สลิปนี้ซ้ำกับออเดอร์ ${dupOf}`);
       lines.push('', summary(o), '', 'ตรวจสลิปที่หน้า /admin');
-      try { await send({ to: shop, subject: `[KCUT] ออเดอร์ใหม่ ${o.id} - ${baht(o.amount)} บาท (รอตรวจสลิป)`, text: lines.join('\n') }); return true; }
+      try { await send({ to: shop, subject: `[${brand(o)}] ออเดอร์ใหม่ ${o.id} - ${baht(o.amount)} บาท (รอตรวจสลิป)`, text: lines.join('\n') }); return true; }
       catch (e) { console.error('[mail] failed:', e.message); return false; }
     },
     // slip rejected: tell the customer (if they left an email) to re-send the slip via LINE
@@ -50,13 +53,13 @@ export function createMailer() {
       const lines = [`สวัสดีคุณ ${o.firstName}`, '', `เราตรวจสลิปของคำสั่งซื้อ ${o.id} แล้วยังยืนยันการชำระเงินไม่ได้`];
       if (note) lines.push(`เหตุผล: ${note}`);
       lines.push('', `กรุณาส่งสลิปที่ถูกต้องทาง LINE: @spgo (https://lin.ee/YmWfY9Kv) พร้อมแจ้งเลขที่ ${o.id}`);
-      try { await send({ to: o.email, subject: `KCUT ตรวจสลิปไม่ผ่าน ${o.id}`, text: lines.join('\n') }); return true; }
+      try { await send({ to: o.email, subject: `${brand(o)} ตรวจสลิปไม่ผ่าน ${o.id}`, text: lines.join('\n') }); return true; }
       catch (e) { console.error('[mail] failed:', e.message); return false; }
     },
     // called when an order becomes paid: customer confirmation (if they gave an email) + shop notification
     async orderPaid(o) {
-      const jobs = [send({ to: shop, subject: `[KCUT] ชำระเงินแล้ว ${o.id} - ${baht(o.amount)} บาท`, text: `มีคำสั่งซื้อที่ชำระเงินแล้ว\n\n${summary(o)}` })];
-      if (o.email) jobs.push(send({ to: o.email, subject: `KCUT ยืนยันการชำระเงิน ${o.id}`, text: `สวัสดีคุณ ${o.firstName}\n\nเราได้รับการชำระเงินของคุณแล้ว ขอบคุณที่ใช้บริการ KCUT\n\n${summary(o)}\n\nสอบถามเพิ่มเติม LINE: @spgo (https://lin.ee/YmWfY9Kv)` }));
+      const jobs = [send({ to: shop, subject: `[${brand(o)}] ชำระเงินแล้ว ${o.id} - ${baht(o.amount)} บาท`, text: `มีคำสั่งซื้อที่ชำระเงินแล้ว\n\n${summary(o)}` })];
+      if (o.email) jobs.push(send({ to: o.email, subject: `${brand(o)} ยืนยันการชำระเงิน ${o.id}`, text: `สวัสดีคุณ ${o.firstName}\n\nเราได้รับการชำระเงินของคุณแล้ว ขอบคุณที่ใช้บริการ ${brand(o)}\n\n${summary(o)}\n\nสอบถามเพิ่มเติม LINE: @spgo (https://lin.ee/YmWfY9Kv)` }));
       const results = await Promise.allSettled(jobs);
       results.filter((r) => r.status === 'rejected').forEach((r) => console.error('[mail] failed:', r.reason?.message));
       return results.every((r) => r.status === 'fulfilled');

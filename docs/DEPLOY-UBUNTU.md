@@ -59,26 +59,39 @@ Each deploy is a new release directory plus an atomic symlink switch.
 server {
     listen 80;
     server_name example.com www.example.com;
-    root /opt/kcut/site/dist;   # symlink swapped by the content admin (step 7)
+    root /opt/kcut/web/home;   # spvdo.com/ = product hub; /kcut/ and /books/ are aliased below
     index index.html;
 
     gzip on;
     gzip_types text/css application/javascript image/svg+xml application/json;
     gzip_min_length 1024;
 
-    # fingerprinted/static media: cache hard
+    # /kcut/ = Astro build (site/dist, symlink swapped by the content admin, step 7), /books/ = static book shop.
+    # Plain prefix locations (no ^~) on purpose: the regex asset rules below must still apply to them.
+    location = /kcut  { return 301 /kcut/; }
+    location = /books { return 301 /books/; }
+    # html: always revalidate so new releases show immediately
+    location /kcut/  { alias /opt/kcut/site/dist/;  index index.html; add_header Cache-Control "no-cache"; }
+    location /books/ { alias /opt/kcut/web/books/;  index index.html; add_header Cache-Control "no-cache"; }
+    # static media: cache hard
+    location ~* ^/kcut/(.+\.(?:webp|png|css|js|json))$ {
+        alias /opt/kcut/site/dist/$1;
+        expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff;
+    }
+    location ~* ^/books/(.+\.(?:webp|png))$ {
+        alias /opt/kcut/web/books/$1;
+        expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff;
+    }
+    # mp4 seeking / streaming
+    location ~* ^/kcut/(.+\.mp4)$ { alias /opt/kcut/site/dist/$1; mp4; expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header Accept-Ranges bytes; }
     location ~* \.(webp|mp4|woff2|css|js)$ {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
         add_header X-Content-Type-Options nosniff;
         try_files $uri =404;
     }
-    # html: always revalidate so new releases show immediately
-    location = /index.html { add_header Cache-Control "no-cache"; }
-    location / { try_files $uri $uri/ /index.html; }
-
-    # mp4 seeking / streaming
-    location ~* \.mp4$ { mp4; add_header Accept-Ranges bytes; }
+    location = / { try_files /index.html =404; add_header Cache-Control "no-cache"; }
+    location / { try_files $uri $uri/ =404; }
 
     # ^~ so the regex rules above (.js, .webp, .mp4) never catch /admin/content.js or /admin/slips/*.webp
     location ^~ /admin { proxy_pass http://127.0.0.1:3000; proxy_set_header Host $host;

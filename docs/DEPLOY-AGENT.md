@@ -123,21 +123,35 @@ Replace `example.com`. The `^~` on `/admin` and `/api/` is essential: without it
 server {
     listen 80;
     server_name example.com www.example.com;
-    root /opt/kcut/site/dist;
+    root /opt/kcut/web/home;      # spvdo.com/ = product hub (web/home); /kcut/ and /books/ are aliased below
     index index.html;
 
     gzip on;
     gzip_types text/css application/javascript image/svg+xml application/json;
     gzip_min_length 1024;
 
+    # /kcut/ = Astro build (site/dist symlink swapped on publish), /books/ = static book shop.
+    # Plain prefix locations (no ^~) on purpose: the regex asset rules below must still apply to them.
+    location = /kcut  { return 301 /kcut/; }
+    location = /books { return 301 /books/; }
+    location /kcut/  { alias /opt/kcut/site/dist/;  index index.html; add_header Cache-Control "no-cache"; }
+    location /books/ { alias /opt/kcut/web/books/;  index index.html; add_header Cache-Control "no-cache"; }
+    location ~* ^/kcut/(.+\.(?:webp|png|mp4|css|js|json))$ {
+        alias /opt/kcut/site/dist/$1;
+        expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff;
+    }
+    location ~* ^/books/(.+\.(?:webp|png))$ {
+        alias /opt/kcut/web/books/$1;
+        expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff;
+    }
     location ~* \.(webp|mp4|woff2|css|js)$ {
         expires 30d;
         add_header Cache-Control "public, max-age=2592000";
         add_header X-Content-Type-Options nosniff;
         try_files $uri =404;
     }
-    location = /index.html { add_header Cache-Control "no-cache"; }
-    location / { try_files $uri $uri/ /index.html; }
+    location = / { try_files /index.html =404; add_header Cache-Control "no-cache"; }
+    location / { try_files $uri $uri/ =404; }
 
     location = /api/admin/upload {
         client_max_body_size 300m; proxy_request_buffering off; proxy_read_timeout 600s;
@@ -157,7 +171,7 @@ server {
 sudo ln -sf /etc/nginx/sites-available/kcut /etc/nginx/sites-enabled/kcut && sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl reload nginx
 ```
-Check: `nginx -t` OK. nginx must be able to read the symlink target: `sudo -u www-data test -r /opt/kcut/site/dist/index.html && echo readable`. If it prints nothing, `chmod o+x /opt /opt/kcut /opt/kcut/site` (directories only, never the env file or data dirs).
+Check: `nginx -t` OK. nginx must be able to read the symlink target: `sudo -u www-data test -r /opt/kcut/site/dist/index.html && sudo -u www-data test -r /opt/kcut/web/books/index.html && sudo -u www-data test -r /opt/kcut/web/home/index.html && echo readable`. If it prints nothing, `chmod o+x /opt /opt/kcut /opt/kcut/site` (directories only, never the env file or data dirs).
 
 Optional: add `limit_req_zone` for `/api/order` to slow abuse (`10r/m` per IP, burst 5).
 
@@ -179,7 +193,12 @@ Check: run the command once by hand and `ls /var/backups/kcut`.
 ## 4. Smoke tests (run all, replace `D` and `PW`; keep `PW` out of the transcript — read it from a shell variable the human typed or `read -s PW`)
 ```bash
 D=https://example.com; read -rs PW; H='X-Requested-With: kcut-admin'
-curl -s -o /dev/null -w "home %{http_code}\n" $D/                                   # 200
+curl -s -o /dev/null -w "home %{http_code}\n" $D/                                   # 200 (product hub)
+curl -s -o /dev/null -w "kcut %{http_code}\n" $D/kcut/                              # 200 (/kcut without slash is a 301)
+curl -s -o /dev/null -w "kcut img %{http_code}\n" $D/kcut/pic1.webp                 # 200
+curl -s -o /dev/null -w "kcut addr %{http_code}\n" $D/kcut/thai-address.json        # 200
+curl -s -o /dev/null -w "books %{http_code}\n" $D/books/                            # 200
+curl -s -o /dev/null -w "books img %{http_code}\n" $D/books/assets/book1.webp       # 200
 curl -sI $D/ | grep -i cache-control                                                # no-cache for html
 curl -s -o /dev/null -w "admin no auth %{http_code}\n" $D/admin                     # 401
 curl -s -o /dev/null -w "content.js no auth %{http_code}\n" $D/admin/content.js     # 401 (a 404 means the nginx ^~ rule is missing)

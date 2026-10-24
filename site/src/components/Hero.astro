@@ -1,4 +1,5 @@
 ---
+import { asset } from '../data/content';
 const { hero, features } = Astro.props;
 ---
     <section class="container mx-auto px-4 pt-4 pb-6 md:pt-6 md:pb-8 max-w-6xl flex flex-col items-center">
@@ -59,8 +60,8 @@ const { hero, features } = Astro.props;
 
             <!-- แทนที่ข้อความสั่งซื้อด้วย รูป 2 รูป (Grid 1 คอลัมน์ในมือถือ, 2 คอลัมน์ในจอใหญ่) -->
             <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700/50 pt-8">
-                <img loading="lazy" decoding="async" src="/pic3.webp" width="900" height="900" alt="รูปเพิ่มเติม 1" class="w-full h-auto rounded-xl md:rounded-2xl shadow-lg border border-slate-700 object-cover hover:scale-[1.02] transition-transform duration-300">
-                <img loading="lazy" decoding="async" src="/pic4.webp" width="900" height="900" alt="รูปเพิ่มเติม 2" class="w-full h-auto rounded-xl md:rounded-2xl shadow-lg border border-slate-700 object-cover hover:scale-[1.02] transition-transform duration-300">
+                <img loading="lazy" decoding="async" src={asset('/pic3.webp')} width="900" height="900" alt="รูปเพิ่มเติม 1" class="w-full h-auto rounded-xl md:rounded-2xl shadow-lg border border-slate-700 object-cover hover:scale-[1.02] transition-transform duration-300">
+                <img loading="lazy" decoding="async" src={asset('/pic4.webp')} width="900" height="900" alt="รูปเพิ่มเติม 2" class="w-full h-auto rounded-xl md:rounded-2xl shadow-lg border border-slate-700 object-cover hover:scale-[1.02] transition-transform duration-300">
             </div>
 
         </div>

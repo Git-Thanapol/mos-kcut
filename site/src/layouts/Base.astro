@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { asset } from '../data/content';
 // cache-busting for the un-fingerprinted scripts in /public: changes on every build
 const v = Date.now().toString(36);
 ---
@@ -17,8 +18,10 @@ const v = Date.now().toString(36);
 <body class="antialiased">
     <slot />
 
-    <script is:inline src={`/checkout.js?v=${v}`} defer></script>
-    <script is:inline src={`/address.js?v=${v}`} defer></script>
-    <script is:inline src={`/modals.js?v=${v}`} defer></script>
+    <script is:inline set:html={`window.KCUT_BASE=${JSON.stringify(asset('/').replace(/\/$/, ''))}`}></script>
+
+    <script is:inline src={`${asset('/checkout.js')}?v=${v}`} defer></script>
+    <script is:inline src={`${asset('/address.js')}?v=${v}`} defer></script>
+    <script is:inline src={`${asset('/modals.js')}?v=${v}`} defer></script>
 </body>
 </html>

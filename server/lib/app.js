@@ -28,7 +28,7 @@ function adminPage(orders, dupOf, filter) {
       <td><span class="st">${STATUS_TH[o.status]}</span>${o.reviewNote ? `<br><small>${esc(o.reviewNote)}</small>` : ''}<div>${actions}</div></td></tr>`;
   }).join('');
   return `<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>KCUT ตรวจสลิป</title><style>
+<title>ตรวจสลิป</title><style>
 body{font-family:system-ui,sans-serif;margin:16px;background:#f1f5f9;color:#0f172a}h1{font-size:20px}nav{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap}
 nav a{padding:8px 14px;border-radius:999px;background:#fff;border:1px solid #cbd5e1;text-decoration:none;color:#0f172a;font-size:14px}nav a.on{background:#0a1224;color:#fff}
 .w{overflow-x:auto}table{border-collapse:collapse;width:100%;background:#fff;min-width:860px}td,th{border:1px solid #e2e8f0;padding:8px;text-align:left;vertical-align:top;font-size:14px}th{background:#0a1224;color:#fff}

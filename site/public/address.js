@@ -12,7 +12,7 @@
   function load() {
     if (db) return Promise.resolve(db);
     if (!loading) {
-      loading = fetch('/thai-address.json').then(function (r) { return r.json(); }).then(function (j) {
+      loading = fetch((window.KCUT_BASE || '') + '/thai-address.json').then(function (r) { return r.json(); }).then(function (j) {
         db = j; fillProvinces(); return db;
       }).catch(function () { loading = null; });
     }
