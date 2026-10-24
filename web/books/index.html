@@ -34,8 +34,24 @@ footer{background:var(--n);color:#c0cada;padding:25px 0;text-align:center;font-s
 @media(max-width:360px){.sticky .btn{font-size:.67rem;padding:8px 5px}.sticky .line-btn span:first-child{font-size:.64rem}.navlinks .line-btn{font-size:.64rem;padding:7px 7px}}
 
 </style>
+<!-- Meta Pixel Code -->
+<script>
+!function(f,b,e,v,n,t,s)
+{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)}(window, document,'script',
+'https://connect.facebook.net/en_US/fbevents.js');
+fbq('init', '2185870765358084');
+fbq('track', 'PageView');
+fbq('track', 'ViewContent', {content_ids: ['book'], content_name: 'หนังสือคลิป AI ปักตะกร้า', content_type: 'product', value: 345, currency: 'THB'});
+</script>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
+<noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2185870765358084&ev=PageView&noscript=1" alt=""></noscript>
 <header><div class="wrap nav">
   <a class="brand" href="/"><span class="brand-mark"><img src="assets/logo.webp" width="626" height="626" alt="โลโก้สวิทแพชชัน"></span><span><b>AI Book</b><small>หนังสือสำหรับผู้เริ่มทำคลิป AI</small></span></a>
   <nav class="navlinks"><a href="#inside">ดูเนื้อหา</a><a href="#samples">ตัวอย่างในเล่ม</a><a class="btn gold" href="#order">สั่งซื้อหนังสือ ↓</a><a class="btn line-btn" href="https://lin.ee/YmWfY9Kv" target="_blank" rel="noopener noreferrer" aria-label="สอบถามแอดมินทาง LINE @spgo"><span class="font-black tracking-wide">LINE</span><span class="whitespace-nowrap">สอบถามแอดมิน</span></a></nav>
@@ -251,6 +267,7 @@ form.addEventListener("submit",async e=>{
     const res=await fetch(ORDER_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
     const data=await res.json().catch(()=>({}));
     if(!res.ok)throw new Error(data.error||"ส่งคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่หรือทักไลน์ @spgo");
+    if(typeof fbq==="function")fbq("track","Purchase",{value:data.amount,currency:"THB",content_ids:[pkg.value],content_name:pkg.dataset.name,content_type:"product",num_items:1},{eventID:data.orderId});
     document.getElementById("noticeText").textContent="เลขที่คำสั่งซื้อ "+data.orderId+" ทีมงานจะตรวจสอบและติดต่อกลับ หากต้องการติดตามสถานะ แจ้งเลขที่นี้กับแอดมินทาง LINE @spgo ได้เลย";
     document.getElementById("notice").classList.add("open");
     form.reset();updateSummary();

@@ -50,7 +50,8 @@ test('validation: price comes from the server, bad input is rejected with a Thai
 test('POST /api/order stores a pending order + slip file and emails the shop', async () => {
   const res = await post('/api/order', base());
   assert.equal(res.status, 201);
-  const { orderId } = await res.json();
+  const { orderId, amount } = await res.json();
+  assert.equal(amount, 390);   // the Meta Pixel Purchase value is taken from this
   assert.match(orderId, /^KC-\d{6}-[0-9A-F]{6}$/);
   const o = store.get(orderId);
   assert.equal(o.status, 'pending'); assert.equal(o.amount, 390); assert.ok(fs.existsSync(path.join(DIR, 'slips', o.slipFile)));
@@ -64,7 +65,8 @@ test('book orders (345 / 490) are stored as BK- orders with their own package na
   for (const [pkg, name] of [['345', 'หนังสือ AI 1 เล่ม'], ['490', 'หนังสือ AI + เว็บ Prompt']]) {
     const res = await post('/api/order', base({ package: pkg, payment: 'cod', slip: null }));
     assert.equal(res.status, 201);
-    const { orderId } = await res.json();
+    const { orderId, amount } = await res.json();
+    assert.equal(amount, Number(pkg));
     assert.match(orderId, /^BK-\d{6}-[0-9A-F]{6}$/);
     const o = store.get(orderId);
     assert.equal(o.amount, Number(pkg)); assert.equal(o.packageName, name); assert.equal(o.product, 'book');

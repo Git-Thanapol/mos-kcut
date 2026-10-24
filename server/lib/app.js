@@ -95,7 +95,7 @@ export function createApp({ store, mailer, adminPassword, trustProxy = false, ra
         store.create(parsed.order, parsed.slip);
         console.log(`[order] ${parsed.order.id} ${parsed.order.amount} THB ${parsed.order.payment}`);
         mailer.orderReceived(parsed.order, store.duplicateOf(parsed.slip?.hash, parsed.order.id));   // fire and forget
-        return send(res, 201, { orderId: parsed.order.id });
+        return send(res, 201, { orderId: parsed.order.id, amount: parsed.order.amount });
       }
 
       if (url.pathname === '/admin' || url.pathname.startsWith('/admin/') || url.pathname.startsWith('/api/admin/')) {

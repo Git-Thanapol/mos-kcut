@@ -190,6 +190,8 @@ async function submitCheckout(event) {
         });
         var data = await res.json().catch(function () { return {}; });
         if (!res.ok) throw new Error(data.error || 'ส่งคำสั่งซื้อไม่สำเร็จ กรุณาลองใหม่หรือทักไลน์ @spgo');
+        // Meta Pixel: value comes from the server response; eventID = order id lets a future Conversions API call dedupe
+        if (typeof fbq === 'function') fbq('track', 'Purchase', { value: data.amount, currency: 'THB', content_ids: [pkg.value], content_name: pkg.dataset.name, content_type: 'product', num_items: 1 }, { eventID: data.orderId });
         btn.innerHTML = 'สั่งซื้อสำเร็จ เลขที่ ' + data.orderId + ' กำลังพาไปที่ LINE...';
         setTimeout(function () { window.location.href = 'https://lin.ee/YmWfY9Kv'; }, 2500);
     } catch (err) {
