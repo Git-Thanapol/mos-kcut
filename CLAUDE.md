@@ -37,7 +37,7 @@ To view the prototype, open `KCUT_PROTOTYPE/index.html` directly in a browser (a
   - Checkout script: `updateSummary()` re-styles the selected package/payment radio cards by toggling Tailwind classes and updates the summary, bank box and button label. `submitCheckout()` is a **stub**: it fakes a 1 s delay and redirects to the LINE link, so no order is saved or sent. `copyAccount()` copies the bank account number.
   - Video modal: `openVideoModal(url)` / `closeVideoModal()` drive `#videoModal` / `#popupVideoPlayer`.
   - Image modal: `openImageModal(src)` / `closeImageModal()` drive `#imageModal` for enlarged review screenshots.
-- Business data is duplicated in the markup and JS and must stay in sync when edited: the LINE URL `https://lin.ee/YmWfY9Kv` (navbar, redirect after checkout), and the bank account number `243-7-01662-5` (HTML `#accountNumber` and `copyAccount()`).
+- Business data is duplicated in the markup and JS and must stay in sync when edited: the LINE URL `https://lin.ee/YmWfY9Kv` (navbar, redirect after checkout), and the bank account number `243-7-01662-5` (HTML `#accountNumber` and `copyAccount()`). The Meta Pixel ID `2185870765358084` is in `site/src/components/MetaPixel.astro`, `web/home/index.html` and `web/books/index.html` (PageView + ViewContent per page, Purchase with the server-returned `amount` in `site/public/checkout.js` and `web/books/index.html`).
 - Package prices come from the `value` of `input[name="package"]` radios. `data-name` holds the display name. The default is the 1-month package at 390 THB. Payment methods are `transfer` (needs slip upload, `#slipInput`) or cash on delivery.
 
 ## Working conventions

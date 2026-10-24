@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { asset } from '../data/content';
+import MetaPixel from '../components/MetaPixel.astro';
 // cache-busting for the un-fingerprinted scripts in /public: changes on every build
 const v = Date.now().toString(36);
 ---
@@ -14,8 +15,10 @@ const v = Date.now().toString(36);
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <MetaPixel />
 </head>
 <body class="antialiased">
+    <noscript><img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=2185870765358084&ev=PageView&noscript=1" alt=""></noscript>
     <slot />
 
     <script is:inline set:html={`window.KCUT_BASE=${JSON.stringify(asset('/').replace(/\/$/, ''))}`}></script>
