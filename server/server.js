@@ -8,6 +8,7 @@ import { createApp } from './lib/app.js';
 import { createBuilder } from './lib/builder.js';
 import { makeBuild, makePublish } from './lib/releases.js';
 import { createContentAdmin } from './lib/content-admin.js';
+import { createPagesAdmin } from './lib/pages-admin.js';
 import { defaults } from '../site/src/data/defaults.ts';   // Node 22.18+ strips the types
 
 const PORT = Number(process.env.PORT || 3000);
@@ -26,5 +27,8 @@ const siteDir = path.resolve(process.env.SITE_DIR || path.join(path.dirname(file
 const releasesDir = path.join(siteDir, 'releases');
 const builder = createBuilder({ build: makeBuild({ siteDir, releasesDir }), publish: makePublish({ siteDir, releasesDir }) });
 const contentAdmin = createContentAdmin({ siteDir, defaults, builder });
-createApp({ store, mailer, adminPassword, trustProxy: process.env.TRUST_PROXY === '1', contentAdmin })
+// Static pages (home, books): text/image overrides in site/data/pages.json rendered into web/<page>/index.live.html.
+const webDir = path.resolve(process.env.WEB_DIR || path.join(siteDir, '..', 'web'));
+const pagesAdmin = createPagesAdmin({ siteDir, webDir });
+createApp({ store, mailer, adminPassword, trustProxy: process.env.TRUST_PROXY === '1', contentAdmin, pagesAdmin })
   .listen(PORT, HOST, () => console.log(`KCUT API on http://${HOST}:${PORT}  store=${store.name}  mailer=${mailer.name}`));

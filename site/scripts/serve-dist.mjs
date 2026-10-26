@@ -8,7 +8,7 @@ import path from 'node:path';
 import zlib from 'node:zlib';
 
 const ROOT = path.resolve('dist');
-const MOUNTS = [['/kcut', ROOT], ['/books', path.resolve('../web/books')], ['', path.resolve('../web/home')]];
+const MOUNTS = [['/kcut', ROOT], ['/books', path.resolve('../web/books')], ['/media', path.resolve('public/media')], ['', path.resolve('../web/home')]];
 const PORT = Number(process.env.PORT || 4400);
 const API = new URL(process.env.API || 'http://127.0.0.1:3000');
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webp': 'image/webp', '.png': 'image/png', '.jpg': 'image/jpeg', '.mp4': 'video/mp4', '.svg': 'image/svg+xml' };
@@ -26,7 +26,9 @@ http.createServer((req, res) => {
   if (p === '/kcut' || p === '/books') { res.writeHead(301, { Location: p + '/' }); return res.end(); }
   if (p.endsWith('/')) p += 'index.html';
   const [prefix, root] = MOUNTS.find(([pre]) => p === pre || p.startsWith(pre + '/'));
-  const file = path.join(root, p.slice(prefix.length));
+  let file = path.join(root, p.slice(prefix.length));
+  const live = file.replace(/index\.html$/, 'index.live.html');   // written by the content admin for home and books
+  if (live !== file && prefix !== '/kcut' && fs.existsSync(live)) file = live;
   if (!file.startsWith(root) || !fs.existsSync(file) || fs.statSync(file).isDirectory()) { res.writeHead(404); return res.end('Not found'); }
   const ext = path.extname(file), size = fs.statSync(file).size;
   const headers = { 'Content-Type': TYPES[ext] || 'application/octet-stream', 'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=2592000', 'Accept-Ranges': 'bytes' };

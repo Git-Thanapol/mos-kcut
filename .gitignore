@@ -27,3 +27,6 @@ site/public/media/
 site/releases/
 site/dist.tmp
 site/dist
+
+# rendered from web/*/index.html + site/data/pages.json by the content admin
+web/*/index.live.html

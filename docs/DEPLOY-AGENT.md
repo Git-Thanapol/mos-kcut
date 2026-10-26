@@ -150,7 +150,11 @@ server {
         add_header X-Content-Type-Options nosniff;
         try_files $uri =404;
     }
-    location = / { try_files /index.html =404; add_header Cache-Control "no-cache"; }
+    # the content admin renders index.live.html next to each template; without edits the template itself is served
+    location = / { try_files /index.live.html /index.html; add_header Cache-Control "no-cache"; }
+    location = /books/ { root /opt/kcut/web; try_files /books/index.live.html /books/index.html; add_header Cache-Control "no-cache"; }
+    # images uploaded in the content admin (immutable uuid names)
+    location ^~ /media/ { alias /opt/kcut/site/public/media/; expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff; }
     location / { try_files $uri $uri/ =404; }
 
     location = /api/admin/upload {
@@ -199,6 +203,7 @@ curl -s -o /dev/null -w "kcut img %{http_code}\n" $D/kcut/pic1.webp             
 curl -s -o /dev/null -w "kcut addr %{http_code}\n" $D/kcut/thai-address.json        # 200
 curl -s -o /dev/null -w "books %{http_code}\n" $D/books/                            # 200
 curl -s -o /dev/null -w "books img %{http_code}\n" $D/books/assets/book1.webp       # 200
+curl -s -u admin:$PW -o /dev/null -w "pages api %{http_code}\n" $D/api/admin/pages    # 200 (text/image slots of home and books)
 curl -sI $D/ | grep -i cache-control                                                # no-cache for html
 curl -s -o /dev/null -w "admin no auth %{http_code}\n" $D/admin                     # 401
 curl -s -o /dev/null -w "content.js no auth %{http_code}\n" $D/admin/content.js     # 401 (a 404 means the nginx ^~ rule is missing)

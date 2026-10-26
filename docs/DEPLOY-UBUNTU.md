@@ -90,7 +90,11 @@ server {
         add_header X-Content-Type-Options nosniff;
         try_files $uri =404;
     }
-    location = / { try_files /index.html =404; add_header Cache-Control "no-cache"; }
+    # the content admin renders index.live.html next to each template; without edits the template itself is served
+    location = / { try_files /index.live.html /index.html; add_header Cache-Control "no-cache"; }
+    location = /books/ { root /opt/kcut/web; try_files /books/index.live.html /books/index.html; add_header Cache-Control "no-cache"; }
+    # images uploaded in the content admin (immutable uuid names)
+    location ^~ /media/ { alias /opt/kcut/site/public/media/; expires 30d; add_header Cache-Control "public, max-age=2592000"; add_header X-Content-Type-Options nosniff; }
     location / { try_files $uri $uri/ =404; }
 
     # ^~ so the regex rules above (.js, .webp, .mp4) never catch /admin/content.js or /admin/slips/*.webp

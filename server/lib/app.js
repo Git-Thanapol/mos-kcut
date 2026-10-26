@@ -45,7 +45,7 @@ b.disabled=true;const r=await fetch('/api/admin/orders/'+b.dataset.id+'/'+(rejec
 const j=await r.json().catch(()=>({}));if(r.ok){location.reload()}else{alert(j.error||'ผิดพลาด');b.disabled=false}});</script></html>`;
 }
 
-export function createApp({ store, mailer, adminPassword, trustProxy = false, rateLimit = 10, contentAdmin = null }) {
+export function createApp({ store, mailer, adminPassword, trustProxy = false, rateLimit = 10, contentAdmin = null, pagesAdmin = null }) {
   const authFails = createRateLimiter();   // 5 wrong admin passwords / 15 min / IP
   const hits = new Map();   // in-memory limit: `rateLimit` orders / 10 min / IP
   const limited = (ip) => {
@@ -103,6 +103,7 @@ export function createApp({ store, mailer, adminPassword, trustProxy = false, ra
         if (!isAdmin(req)) { if (req.headers.authorization) authFails.fail(ip); return deny(res); }
         authFails.reset(ip);
         if (contentAdmin && await contentAdmin(req, res, url, { send, readBody })) return;
+        if (pagesAdmin && await pagesAdmin(req, res, url, { send, readBody })) return;
         if (req.method === 'GET' && url.pathname === '/admin') {
           const orders = store.list();
           const dupOf = new Map(orders.map((o) => [o.id, store.duplicateOf(o.slipHash, o.id)]).filter(([, d]) => d));
